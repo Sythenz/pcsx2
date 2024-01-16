@@ -14,6 +14,10 @@
 
 #include <mutex>
 
+#include "DebugTools/Debug.h"
+
+LOG_SETCHANNEL(CHANNEL_PCSX2)
+
 // Need a lock so the other threads don't try to write to a deleting window.
 LogWindow* g_log_window;
 static std::mutex s_log_mutex;
@@ -331,17 +335,24 @@ void LogWindow::appendMessage(quint32 level, quint32 color, const QString& messa
 			},
 		};
 
-		static constexpr const QColor timestamp_color = QColor(0xcc, 0xcc, 0xcc);
+		static constexpr const QColor timestamp_color = QColor(108, 108, 108);
 
 		QTextCharFormat format = temp_cursor.charFormat();
 
 		if (Log::AreTimestampsEnabled())
 		{
-			const float message_time = Log::GetCurrentMessageTime();
-			const QString qtimestamp = QStringLiteral("[%1] ").arg(message_time, 10, 'f', 4);
+
+			const std::string tag = Log::GetTag();
+			const QString qtag = QString::fromStdString(tag);
 			format.setForeground(QBrush(timestamp_color));
 			temp_cursor.setCharFormat(format);
-			temp_cursor.insertText(qtimestamp);
+			temp_cursor.insertText(qtag);
+			
+			/*const float message_time = Log::GetCurrentMessageTime();
+			const QString qtimestamp = QStringLiteral(" %1 |").arg(message_time, 3, 'f', 3);
+			format.setForeground(QBrush(timestamp_color));
+			temp_cursor.setCharFormat(format);
+			temp_cursor.insertText(qtimestamp);*/
 		}
 
 		const bool dark = static_cast<u32>(QtHost::IsDarkApplicationTheme());

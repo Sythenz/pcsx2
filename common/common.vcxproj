@@ -61,6 +61,7 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="HTTPDownloaderWinHTTP.cpp" />
+    <ClCompile Include="log.cpp" />
     <ClCompile Include="MD5Digest.cpp" />
     <ClCompile Include="MemorySettingsInterface.cpp" />
     <ClCompile Include="ProgressCallback.cpp" />
@@ -115,6 +116,7 @@
     <ClInclude Include="HeapArray.h" />
     <ClInclude Include="HeterogeneousContainers.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="SingleRegisterTypes.h" />
     <ClInclude Include="VectorIntrin.h" />
     <ClInclude Include="LRUCache.h" />

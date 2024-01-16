@@ -383,8 +383,19 @@ void MainWindow::connectSignals()
 	m_ui.actionEnableVerboseLogging->setChecked(true);
 	m_ui.actionEnableVerboseLogging->setEnabled(false);
 #endif
-	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableEEConsoleLogging, "Logging", "EnableEEConsole", true);
-	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableIOPConsoleLogging, "Logging", "EnableIOPConsole", true);
+	//SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableEEConsoleLogging, "Logging", "EnableEEConsole", true);
+	//SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableIOPConsoleLogging, "Logging", "EnableIOPConsole", true);
+
+	for(ChannelMetaData Channel : ChannelInfo)
+	{
+		
+		QAction* newAction = new QAction(tr(Channel.GetChannelMenuName().c_str()), m_ui.menuDebug);
+		newAction->setCheckable(true);
+		m_ui.menuDebug->addAction(newAction);
+		connect(newAction, &QAction::triggered, this, [this]() {  });
+	}
+
+	
 	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableLogWindow, "Logging", "EnableLogWindow", false);
 	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableFileLogging, "Logging", "EnableFileLogging", false);
 	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableLogTimestamps, "Logging", "EnableTimestamps", true);

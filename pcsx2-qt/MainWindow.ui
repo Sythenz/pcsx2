@@ -142,9 +142,6 @@
     <addaction name="separator"/>
     <addaction name="actionEnableLogTimestamps"/>
     <addaction name="separator"/>
-    <addaction name="actionEnableEEConsoleLogging"/>
-    <addaction name="actionEnableIOPConsoleLogging"/>
-    <addaction name="actionEnableCDVDVerboseReads"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">

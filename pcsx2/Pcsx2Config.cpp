@@ -22,6 +22,8 @@
 #include <ShlObj.h>
 #endif
 
+LOG_SETCHANNEL(CHANNEL_PCSX2)
+
 // This macro is actually useful for about any and every possible application of C++ equality operators.
 // Stuck here because of legacy code, new code shouldn't rely on it, it's difficult to read.
 #define OpEqu(field) (field == right.field)
@@ -1867,6 +1869,8 @@ bool EmuFolders::InitializeCriticalFolders()
 	SetDataDirectory();
 
 	// logging of directories in case something goes wrong super early
+	LOG_INFO("App Root!");
+	
 	Console.WriteLn("AppRoot Directory: %s", AppRoot.c_str());
 	Console.WriteLn("DataRoot Directory: %s", DataRoot.c_str());
 	Console.WriteLn("Resources Directory: %s", Resources.c_str());

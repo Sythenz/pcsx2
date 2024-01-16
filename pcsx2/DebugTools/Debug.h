@@ -389,3 +389,23 @@ extern void __Log( const char* fmt, ... );
 #define pgifConLog		SysConsole.pgifLog.IsActive()		&& SysConsole.pgifLog.Write
 #define recordingConLog	SysConsole.recordingConsole.IsActive()	&& SysConsole.recordingConsole.Write
 #define controlLog		SysConsole.controlInfo.IsActive()		&& SysConsole.controlInfo.Write
+
+#define LOG_SETCHANNEL(ChannelName) [[maybe_unused]] static LogChannels ___LogChannel___ = ChannelName;
+//If Unresolved make sure you have set a channel
+#define LOG_INFO(message, ...) Log::Write(___LogChannel___, LOGLEVEL_INFO, Color_Default, message, __VA_ARGS__)
+#define LOG_INFO_PRINTF(...) Log::Writef(___LogChannel___, LOGLEVEL_INFO, Color_Default, __VA_ARGS__)
+
+#define LOG_WARN(message, ...) Log::Writef(___LogChannel___, LOGLEVEL_WARNING, Color_Yellow, message, __VA_ARGS__)
+#define LOG_WARN_PRINTF(...) Log::Write(___LogChannel___, LOGLEVEL_WARNING, Color_Yellow, __VA_ARGS__)
+
+#define LOG_ERROR(message, ...) Log::Writef(___LogChannel___, LOGLEVEL_ERROR, Color_Red, message, __VA_ARGS__)
+#define LOG_ERROR_PRINTF(message, ...) Log::Write(___LogChannel___, LOGLEVEL_ERROR, Color_Red, message, __VA_ARGS__)
+
+#define LOG_DEV(message, ...) Log::Write(___LogChannel___, LOGLEVEL_DEV, Color_Default, message, __VA_ARGS__)
+#define LOG_DEV_PRINTF(...) Log::Writef(___LogChannel___, LOGLEVEL_DEV, Color_Default, __VA_ARGS__)
+
+#define LOG_DEBUG(message, ...) Log::Write(___LogChannel___, LOGLEVEL_DEBUG, Color_Default, message, __VA_ARGS__)
+#define LOG_DEBUG_PRINTF(...) Log::Writef(___LogChannel___, LOGLEVEL_DEBUG, Color_Default, __VA_ARGS__)
+
+#define LOG_TRACE(message, ...) Log::Write(___LogChannel___, LOGLEVEL_TRACE, Color_Default, message, __VA_ARGS__)
+#define LOG_TRACE_PRINTF(...) Log::Writef(___LogChannel___, LOGLEVEL_TRACE, Color_Default, __VA_ARGS__)

@@ -75,6 +75,8 @@
 #include "x86/newVif.h"
 #endif
 
+LOG_SETCHANNEL(CHANNEL_PCSX2)
+
 namespace VMManager
 {
 	static void SetDefaultLoggingSettings(SettingsInterface& si);
@@ -2230,10 +2232,10 @@ void VMManager::LogCPUCapabilities()
 		GetOSVersionString(),
 		GetPhysicalMemory() / _1mb);
 
-	Console.WriteLnFmt("  Processor        = {}", cpuinfo_get_package(0)->name);
-	Console.WriteLnFmt("  Core Count       = {} cores", cpuinfo_get_cores_count());
-	Console.WriteLnFmt("  Thread Count     = {} threads", cpuinfo_get_processors_count());
-	Console.WriteLn();
+	LOG_INFO("  Processor        = {}", cpuinfo_get_package(0)->name);
+	LOG_INFO("  Core Count       = {} cores", cpuinfo_get_cores_count());
+	LOG_INFO("  Thread Count     = {} threads", cpuinfo_get_processors_count());
+	LOG_INFO("");
 
 	std::string features;
 	if (cpuinfo_has_x86_avx())
@@ -2243,9 +2245,9 @@ void VMManager::LogCPUCapabilities()
 
 	StringUtil::StripWhitespace(&features);
 
-	Console.WriteLn(Color_StrongBlack, "x86 Features Detected:");
-	Console.WriteLnFmt("  {}", features);
-	Console.WriteLn();
+	LOG_INFO_PRINTF("x86 Features Detected:");
+	LOG_INFO("  {}", features);
+	LOG_INFO("");
 }
 
 

@@ -56,7 +56,7 @@ oprofile_data/
 /UpgradeLog*.htm
 /.vscode*
 
-# Jetbrains Rider
+#Jetbrains Rider
 /.idea*
 
 # KDevelop 4 Workspace Configuration Files
