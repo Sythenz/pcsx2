@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <map>
 #include <vector>
 
 #include "Pcsx2Defs.h"
@@ -62,32 +63,6 @@ enum ChannelType
 	TRACE, LOG
 };
 
-enum ChannelCategory
-{
-	CAT_Unorganized,
-	CAT_PCSX2,
-	CAT_PS2,
-	CAT_PSX,
-	CAT_Config,
-	CAT_Recording
-};
-
-struct ChannelMetaData
-{
-	// Name used to print to console
-	std::string_view ChannelName = "UNDEFINED";
-	ChannelCategory Category = CAT_Unorganized;
-	ConsoleColors Color = Color_Default;
-	ChannelType Type = ChannelType::LOG;
-	int ChannelID = -1;
-
-	std::string GetChannelMenuName()
-	{
-		std::string result = fmt::format("{}", std::string(ChannelName));
-		return result; 
-	}
-};
-
 /*
  * Adding a Log Channel:
  * To add a log channel, define in the enum, and in the same order define in Channel Meta Data with additional details.
@@ -137,51 +112,69 @@ enum LogChannels
 	CHANNEL_MAX
 };
 
+
+struct ChannelMetaData
+{
+	// Name used to print to console
+	std::string_view ChannelName = "UNDEFINED";
+	LogChannels Channel;
+	std::string_view Category;
+	ConsoleColors Color = Color_Default;
+	ChannelType Type = ChannelType::LOG;
+	int ChannelID = -1;
+
+	std::string GetChannelMenuName()
+	{
+		std::string result = fmt::format("{}", std::string(ChannelName));
+		return result; 
+	}
+};
+
 constexpr ChannelMetaData ChannelInfo[LogChannels::CHANNEL_MAX]
 {
-	{"NONE",			CAT_Unorganized, Color_Default, LOG, 0}, // Nothing will log on this channel...
-	{"PCSX2",			CAT_PCSX2, Color_Default, LOG, 1}, // General anything PCSX2 without a module
+	{"PCSX2",CHANNEL_NONE, "Core", Color_Default, LOG, 0}, // Nothing will log on this channel...
+	{"PCSX2",CHANNEL_PCSX2, "Core", Color_Default, LOG, 1}, // General anything PCSX2 without a module
 
 	//Traces
-	{"SIF",			CAT_PCSX2, Color_Default, TRACE, 2},
-	{"BIOS",			CAT_PCSX2, Color_Default, TRACE, 3},
-	{"GPU",			CAT_PCSX2, Color_Default, TRACE, 4},
-	{"VUM",			CAT_PCSX2, Color_Default, TRACE, 5},
-	{"MEM",			CAT_PCSX2, Color_Default, TRACE, 6},
-	{"CACHE",			CAT_PCSX2, Color_Default, TRACE, 7},
-	{"HW",			CAT_PCSX2, Color_Default, TRACE, 8},
-	{"UNKNOWNHW",		CAT_PCSX2, Color_Default, TRACE, 9},
-	{"DMA",			CAT_PCSX2, Color_Default, TRACE, 10},
-	{"IPU",			CAT_PCSX2, Color_Default, TRACE, 11},
-	{"VIF",			CAT_PCSX2, Color_Default, TRACE, 12},
-	{"SPR",			CAT_PCSX2, Color_Default, TRACE, 13},
-	{"GIF",			CAT_PCSX2, Color_Default, TRACE, 14},
-	{"MSKPATH3",		CAT_PCSX2, Color_Default, TRACE, 15},
-	{"EECNT",			CAT_PCSX2, Color_Default, TRACE, 16},
-	{"VIFCODE",		CAT_PCSX2, Color_Default, TRACE, 17},
-	{"GIFTAG",		CAT_PCSX2, Color_Default, TRACE, 18},
-	{"PSXBIOS",		CAT_PSX, Color_Default, TRACE, 19},
-	{"PSXGPU",		CAT_PSX, Color_Default, TRACE, 20},
-	{"PSXMEM",		CAT_PSX, Color_Default, TRACE, 21},
-	{"PSXHW",			CAT_PSX, Color_Default, TRACE, 22},
-	{"PSXUNKNOWNHW",	CAT_PSX, Color_Default, TRACE, 23},
-	{"PSXDMA",		CAT_PSX, Color_Default, TRACE, 24},
-	{"PSXCNT",		CAT_PSX, Color_Default, TRACE, 25},
-	{"MEMCARDS",		CAT_Config, Color_Default, TRACE, 26},
-	{"PAD",			CAT_Config, Color_Default, TRACE, 27},
-	{"GPU",			CAT_Config, Color_Default, TRACE, 28},
-	{"CDVD",			CAT_Config, Color_Default, TRACE, 29},
-	{"MDEC",			CAT_Config, Color_Default, TRACE, 30},
+	{"SIF",CHANNEL_SIF,"Core", Color_Default, TRACE, 2},
+	{"BIOS",CHANNEL_BIOS, "Core", Color_Default, TRACE, 3},
+	{"GPU",CHANNEL_GPU, "Core", Color_Default, TRACE, 4},
+	{"VUM",CHANNEL_VUM, "Core", Color_Default, TRACE, 5},
+	{"MEM",CHANNEL_MEM, "Core", Color_Default, TRACE, 6},
+	{"CACHE",CHANNEL_CACHE, "Core", Color_Default, TRACE, 7},
+	{"HW",CHANNEL_HW, "Core", Color_Default, TRACE, 8},
+	{"UNKNOWNHW",CHANNEL_UNKNOWNHW, "Core", Color_Default, TRACE, 9},
+	{"DMA",CHANNEL_DMA, "PS2", Color_Default, TRACE, 10},
+	{"IPU",CHANNEL_IPU, "PS2", Color_Default, TRACE, 11},
+	{"VIF",CHANNEL_VIF, "PS2", Color_Default, TRACE, 12},
+	{"SPR",CHANNEL_SPR, "PS2", Color_Default, TRACE, 13},
+	{"GIF",CHANNEL_GIF, "PS2", Color_Default, TRACE, 14},
+	{"MSKPATH3",CHANNEL_MSKPATH3, "PS2", Color_Default, TRACE, 15},
+	{"EECNT",CHANNEL_EECNT, "PS2", Color_Default, TRACE, 16},
+	{"VIFCODE",CHANNEL_VIFCODE, "PS2", Color_Default, TRACE, 17},
+	{"GIFTAG",CHANNEL_GIFTAG, "PS2", Color_Default, TRACE, 18},
+	{"PSXBIOS",CHANNEL_PSXBIOS, "PSX", Color_Default, TRACE, 19},
+	{"PSXGPU",CHANNEL_PSXGPU, "PSX", Color_Default, TRACE, 20},
+	{"PSXMEM",CHANNEL_PSXMEM, "PSX", Color_Default, TRACE, 21},
+	{"PSXHW",CHANNEL_PSXHW, "PSX", Color_Default, TRACE, 22},
+	{"PSXUNKNOWNHW",CHANNEL_PSXUNKNOWNHW, "PSX", Color_Default, TRACE, 23},
+	{"PSXDMA",CHANNEL_PSXDMA, "PSX", Color_Default, TRACE, 24},
+	{"PSXCNT",CHANNEL_PSXCNT, "PSX", Color_Default, TRACE, 25},
+	{"MEMCARDS",CHANNEL_MEMCARDS, "PSX", Color_Default, TRACE, 26},
+	{"PAD",CHANNEL_PAD, "PSX", Color_Default, TRACE, 27},
+	{"GPU",CHANNEL_GPU, "PSX", Color_Default, TRACE, 28},
+	{"CDVD",CHANNEL_CDVD, "PSX", Color_Default, TRACE, 29},
+	{"MDEC",CHANNEL_MDEC, "PSX", Color_Default, TRACE, 30},
 
 	//Logs
-	{"ELF",			CAT_PS2, Color_Default, LOG, 31},
-	{"EERECPERF",		CAT_Recording, Color_Default, LOG, 32},
-	{"EE",			CAT_PS2, Color_Default, LOG, 33},
-	{"EEDECI2",		CAT_PS2, Color_Default, LOG, 34},
-	{"IOP",			CAT_PS2, Color_Default, LOG, 35},
-	{"PGIF",			CAT_PS2, Color_Default, LOG, 36},
-	{"RECORDING",		CAT_Recording, Color_Default, LOG, 37},
-	{"CONTROL",		CAT_PS2, Color_Default, LOG, 38}
+	{"ELF",CHANNEL_ELF, "Core", Color_Default, LOG, 31},
+	{"EERECPERF",CHANNEL_EERECPERF, "PS2", Color_Default, LOG, 32},
+	{"EE",CHANNEL_EE, "PS2", Color_Default, LOG, 33},
+	{"EEDECI2",CHANNEL_EE_DECI2, "PS2", Color_Default, LOG, 34},
+	{"IOP",CHANNEL_IOP, "PS2", Color_Default, LOG, 35},
+	{"PGIF",CHANNEL_PGIF, "PS2", Color_Default, LOG, 36},
+	{"RECORDING",CHANNEL_RECORDING, "Core", Color_Default, LOG, 37},
+	{"CONTROL",CHANNEL_CONTROL, "Core", Color_Default, LOG, 38}
 };
 
 namespace Log

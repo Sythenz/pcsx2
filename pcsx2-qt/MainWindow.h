@@ -293,6 +293,9 @@ private:
 
 	QMenu* m_settings_toolbar_menu = nullptr;
 
+	QMenu* m_debug_logging_menu = nullptr;
+	QMenu* m_debug_traces_menu = nullptr;
+
 	bool m_display_created = false;
 	bool m_relative_mouse_mode = false;
 	bool m_hide_mouse_cursor = false;
