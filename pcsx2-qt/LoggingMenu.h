@@ -4,8 +4,23 @@
 #pragma once
 #include <set>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QToolBar>
 
+#include "AboutDialog.h"
 #include "common/log.h"
+
+class LoggingDialog final : public QDialog
+{
+	Q_OBJECT
+	
+public:
+	explicit LoggingDialog(QWidget* parent = nullptr);
+	~LoggingDialog();
+
+private:
+	
+	//Ui::LoggingDialog m_ui;
+};
 
 class LoggingMenu final : public QMenu
 {

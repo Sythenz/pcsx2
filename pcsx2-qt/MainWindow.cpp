@@ -388,51 +388,13 @@ void MainWindow::connectSignals()
 	//SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableEEConsoleLogging, "Logging", "EnableEEConsole", true);
 	//SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableIOPConsoleLogging, "Logging", "EnableIOPConsole", true);
 
-	QMenu* logging_menu = new LoggingMenu(m_ui.menuDebug);
+	QAction* action = new QAction(tr("Logging"), m_ui.menuDebug);
+	m_ui.menuDebug->addAction(action);
+	connect(action, &QAction::triggered, this, [this]() {
+		LoggingDialog* LogDialog = new LoggingDialog;
+		LogDialog->show();
+	});
 	
-	/*
-	m_debug_logging_menu = m_ui.menuDebug->addMenu(tr("Logging"));
-
-	QAction* DisableLoggingAction = new QAction(tr("Disable All"), m_debug_logging_menu);
-	DisableLoggingAction->setCheckable(true);
-	DisableLoggingAction->setChecked(true);
-	m_debug_logging_menu->addAction(DisableLoggingAction);
-	connect(DisableLoggingAction, &QAction::triggered, this, [this]() {  });
-
-	for(ChannelMetaData Channel : ChannelInfo)
-	{
-		if(Channel.Type == ChannelType::LOG)
-		{
-			QAction* newAction = new QAction(tr(Channel.GetChannelMenuName().c_str()),m_debug_logging_menu);
-			newAction->setCheckable(true);
-			m_debug_logging_menu->addAction(newAction);
-			connect(newAction, &QAction::triggered, this, [this]() {  });
-		}
-	}
-	
-#if defined(PCSX2_DEBUG) || defined(PCSX2_DEVBUILD)
-
-	m_debug_traces_menu = m_ui.menuDebug->addMenu(tr("Traces"));
-	QAction* DisableTracesAction = new QAction(tr("Disable All"), m_debug_traces_menu);
-	DisableTracesAction->setCheckable(true);
-	DisableTracesAction->setChecked(true);
-	m_debug_traces_menu->addAction(DisableTracesAction);
-
-	m_debug_traces_menu->addSeparator();
-	
-	for(ChannelMetaData Channel : ChannelInfo)
-	{
-		if(Channel.Type == ChannelType::TRACE)
-		{
-			QAction* newAction = new QAction(tr(Channel.GetChannelMenuName().c_str()), m_debug_traces_menu);
-			newAction->setCheckable(true);
-			m_debug_traces_menu->addAction(newAction);
-			connect(newAction, &QAction::triggered, this, [this]() {  });
-		}
-	}
-#endif
-*/
-		
 	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableLogWindow, "Logging", "EnableLogWindow", false);
 	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableFileLogging, "Logging", "EnableFileLogging", false);
 	SettingWidgetBinder::BindWidgetToBoolSetting(nullptr, m_ui.actionEnableLogTimestamps, "Logging", "EnableTimestamps", true);

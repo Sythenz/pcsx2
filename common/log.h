@@ -125,15 +125,14 @@ struct ChannelMetaData
 
 	std::string GetChannelMenuName()
 	{
-		std::string result = fmt::format("{}", std::string(ChannelName));
-		return result; 
+		return fmt::format("{} logging...", std::string(ChannelName)); 
 	}
 };
 
 constexpr ChannelMetaData ChannelInfo[LogChannels::CHANNEL_MAX]
 {
-	{"PCSX2",CHANNEL_NONE, "Core", Color_Default, LOG, 0}, // Nothing will log on this channel...
-	{"PCSX2",CHANNEL_PCSX2, "Core", Color_Default, LOG, 1}, // General anything PCSX2 without a module
+	{"NONE",CHANNEL_NONE, "Core", Color_Default, LOG, 0}, // Nothing will log on this channel...
+	{"PCSX2",CHANNEL_PCSX2, "Core", Color_Default, LOG, 1}, // General anything PCSX2 without a channel
 
 	//Traces
 	{"SIF",CHANNEL_SIF,"Core", Color_Default, TRACE, 2},
