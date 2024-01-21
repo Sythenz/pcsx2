@@ -28,21 +28,36 @@
    </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMaximumSize</enum>
+     </property>
      <property name="leftMargin">
-      <number>3</number>
+      <number>5</number>
      </property>
      <property name="topMargin">
-      <number>3</number>
+      <number>5</number>
      </property>
      <property name="rightMargin">
-      <number>3</number>
+      <number>5</number>
      </property>
      <property name="bottomMargin">
-      <number>3</number>
+      <number>5</number>
      </property>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="spacing">
+        <number>3</number>
+       </property>
+       <property name="leftMargin">
+        <number>3</number>
+       </property>
+       <property name="topMargin">
+        <number>3</number>
+       </property>
+       <property name="rightMargin">
+        <number>3</number>
+       </property>
+       <property name="bottomMargin">
         <number>3</number>
        </property>
        <item>
@@ -159,6 +174,18 @@
        <property name="spacing">
         <number>6</number>
        </property>
+       <property name="leftMargin">
+        <number>3</number>
+       </property>
+       <property name="topMargin">
+        <number>3</number>
+       </property>
+       <property name="rightMargin">
+        <number>3</number>
+       </property>
+       <property name="bottomMargin">
+        <number>3</number>
+       </property>
        <item>
         <widget class="QComboBox" name="filterType">
          <item>
@@ -174,6 +201,12 @@
        </item>
        <item>
         <widget class="QComboBox" name="filterRegion">
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="frame">
+          <bool>true</bool>
+         </property>
          <item>
           <property name="text">
            <string>All Regions</string>
@@ -206,7 +239,17 @@
     </layout>
    </item>
    <item>
-    <widget class="QStackedWidget" name="stack"/>
+    <widget class="QStackedWidget" name="stack">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

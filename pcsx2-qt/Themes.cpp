@@ -9,8 +9,10 @@
 #include "common/Path.h"
 
 #include <QtCore/QFile>
+#include <QtGui/QFont>
 #include <QtGui/QPalette>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QStyle>
 #include <QtWidgets/QStyleFactory>
 
@@ -60,36 +62,18 @@ void QtHost::SetStyleFromSettings()
 		// adapted from https://gist.github.com/QuantumCD/6245215
 		qApp->setStyle(QStyleFactory::create("Fusion"));
 
-		const QColor lighterGray(75, 75, 75);
-		const QColor darkGray(53, 53, 53);
-		const QColor gray(128, 128, 128);
-		const QColor black(25, 25, 25);
-		const QColor blue(198, 238, 255);
+		QFile file("pcsx2-style.qss");
+		file.open(QFile::ReadOnly);
+		QString pcsx2style = QString(file.readAll());
 
-		QPalette darkPalette;
-		darkPalette.setColor(QPalette::Window, darkGray);
-		darkPalette.setColor(QPalette::WindowText, Qt::white);
-		darkPalette.setColor(QPalette::Base, black);
-		darkPalette.setColor(QPalette::AlternateBase, darkGray);
-		darkPalette.setColor(QPalette::ToolTipBase, darkGray);
-		darkPalette.setColor(QPalette::ToolTipText, Qt::white);
-		darkPalette.setColor(QPalette::Text, Qt::white);
-		darkPalette.setColor(QPalette::Button, darkGray);
-		darkPalette.setColor(QPalette::ButtonText, Qt::white);
-		darkPalette.setColor(QPalette::Link, blue);
-		darkPalette.setColor(QPalette::Highlight, lighterGray);
-		darkPalette.setColor(QPalette::HighlightedText, Qt::white);
-		darkPalette.setColor(QPalette::PlaceholderText, QColor(Qt::white).darker());
-
-		darkPalette.setColor(QPalette::Active, QPalette::Button, darkGray);
-		darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, gray);
-		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray);
-		darkPalette.setColor(QPalette::Disabled, QPalette::Text, gray);
-		darkPalette.setColor(QPalette::Disabled, QPalette::Light, darkGray);
-
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		QFont font("Roboto");
+		font.setStyleHint(QFont::SansSerif);
+		font.setWeight(QFont::Bold);
+		qApp->setFont(font);
+				
+		qApp->setStyleSheet(pcsx2style);
+		
+		//qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; } QWidget { padding: 3px; } ");
 	}
 	else if (theme == "darkfusionblue")
 	{
