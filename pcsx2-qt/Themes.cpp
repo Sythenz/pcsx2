@@ -47,6 +47,7 @@ void QtHost::UpdateApplicationTheme()
 
 void QtHost::SetupStylesheet(const QPalette& palette, const QString& qss)
 {
+	const bool themestyle = Host::GetBaseBoolSettingValue("UI", "ThemeCompactMode", false);
 	qApp->setStyle(QStyleFactory::create("Fusion"));
 
 	//Load in our 'Normalize' stylesheet, used for formatting and fixing whitespacing issues (see comment in qss file).
@@ -59,7 +60,15 @@ void QtHost::SetupStylesheet(const QPalette& palette, const QString& qss)
 	// this can be overriden in each theme with the same command.
 	qApp->setPalette(palette);
 
-	qApp->setStyleSheet(pcsx2qss + qss);
+	if(themestyle)
+	{
+		qApp->setStyleSheet(qss);
+	}
+	else
+	{
+		qApp->setStyleSheet(pcsx2qss + qss);
+	}
+
 }
 
 void QtHost::SetStyleFromSettings()

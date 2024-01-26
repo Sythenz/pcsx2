@@ -82,6 +82,8 @@ InterfaceSettingsWidget::InterfaceSettingsWidget(SettingsWindow* dialog, QWidget
 		QtHost::GetDefaultThemeName(), "InterfaceSettingsWidget");
 	connect(m_ui.theme, QOverload<int>::of(&QComboBox::currentIndexChanged), [this]() { emit themeChanged(); });
 
+	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_ui.themecompact, "UI", "ThemeCompactMode", false);
+
 	populateLanguages();
 	SettingWidgetBinder::BindWidgetToStringSetting(sif, m_ui.language, "UI", "Language", QtHost::GetDefaultLanguage());
 	connect(m_ui.language, QOverload<int>::of(&QComboBox::currentIndexChanged), [this]() { emit languageChanged(); });
@@ -165,6 +167,9 @@ InterfaceSettingsWidget::InterfaceSettingsWidget(SettingsWindow* dialog, QWidget
 	dialog->registerWidgetHelp(
 		m_ui.disableWindowResizing, tr("Disable Window Resizing"), tr("Unchecked"), 
 		tr("Prevents the main window from being resized."));
+	dialog->registerWidgetHelp(
+		m_ui.themecompact, tr("Theme Compact Mode"), tr("Unchecked"), 
+		tr("Enables old way of displaying themes without padding and quality of life improvements.."));
 
 	onRenderToSeparateWindowChanged();
 }

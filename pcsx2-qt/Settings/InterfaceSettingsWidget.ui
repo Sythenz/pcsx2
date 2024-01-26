@@ -145,15 +145,8 @@
       <string>Preferences</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Language:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="language"/>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="theme"/>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_2">
@@ -162,8 +155,32 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="theme"/>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="language"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Language:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="themecompactlabel">
+        <property name="text">
+         <string>Styling</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="themecompact">
+        <property name="toolTip">
+         <string>Enables old way of displaying themes without padding and quality of life improvements.</string>
+        </property>
+        <property name="text">
+         <string>Compact Mode</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
