@@ -1,0 +1,222 @@
+﻿/* 
+    pcsx2-spacingfixes.qss - If you have used or worked with CSS a lot, this essentially
+    is our version of "Normalize.css", where we have come up with a more aesthetically 
+    pleasing and better use of whitespace and to keep a consistency across all themes.
+    This is intended to be used with other stylesheets.
+
+    Important Note:
+    QSS may seem friendly, but do not be decieved - my intent is to make this a 
+    'framework' of sorts to follow. But dear god, please only play with this if you 
+    have studied all the weird conditions and backwards bug solving of QSS.
+                                                    
+    You may think you're modifying one element, but you'd be breaking 10 others.
+    Thankz <3
+
+/* Globals */
+
+QWidget {
+    font-size: 12px;
+}
+
+QLabel {
+    padding: 2px;
+}
+
+#horizontalLayout_3 > QWidget {
+    margin: 5px;
+}
+
+QPlainTextEdit, QTextBrowser, #settingsCategory
+{
+    border: 0;
+    border-radius: 3px;
+    font-weight: normal;
+}
+
+/* Advanced Settings Widget first label */
+QScrollArea > QLabel {
+    padding: 5px;
+}
+
+QScrollArea {
+    padding: 5px;
+    border: 0;
+}
+
+QWidget > QLabel {
+}
+
+QPlainTextEdit, QTextBrowser {
+    padding: 8px;
+}
+
+QTreeView {
+    padding: 5px;
+}
+
+#settingsCategory
+{
+    border: 0;
+    border-radius: 3px;
+}
+
+/* QMenuBar */
+
+QMenuBar {
+    border: 0;
+    padding: 5px;
+    font-family: Roboto, sans-serif;
+}
+
+QMenuBar::item {
+    border: 0;
+    padding: 3px 6px;
+}
+
+QMenuBar::item:selected {
+    padding: 5px;
+}
+
+QMenu::item {
+    margin: 5px;
+}
+
+QMenu::item:selected {
+    background: transparent;
+}
+
+QMenu::item:disabled {
+    background: transparent;
+}
+
+QStackedWidget, QTableView { padding: 0; }
+
+QHeaderView::section {
+    padding: 8px;
+    border: 0;
+}
+
+QTableView::item {
+    border: 0;
+    padding: 5px;
+}
+
+QMenu {
+    padding: 2px;
+    border: 0;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 2px;
+    border: 0;
+}
+
+/* Buttons */
+
+QGroupBox > QPushButton, QGroupBox > QToolButton {
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+QPushButton, QToolButton {
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+QPushbutton::disabled, QToolButton::disabled {}
+
+/* QComboBox */
+
+QComboBox {
+    font-weight: normal;
+    margin: 2px;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+
+QComboBox::drop-down {
+    border: 0;
+    margin: 3px;
+}
+
+QComboBox::down-arrow {
+    image: url(:/icons/ui/caret_down2.png);
+    border: 0;
+    left: -3px;
+}
+
+/* QCheckBox */
+QCheckBox {
+    padding: 5px;
+    margin: 3px;
+}
+
+/* QLineEdit */
+
+QLineEdit {
+    padding: 5px;
+}
+
+/* QTabBar */
+
+QTabBar {
+    qproperty-drawBase: 0;
+}
+
+/* QTabWidget */
+
+QTabWidget::pane {
+    border: 0;
+    top: -1px;
+}
+
+/* QSpinBox */
+QSpinBox {
+    padding: 4px;
+}
+
+QSpinBox::up-button, QSpinBox::down-button {
+    border: 0;
+}
+
+/* QTooltip */
+
+QToolTip {
+    padding: 5px;
+    border-radius: 5px;
+}
+
+QListWidget {
+    padding: 5px;
+}
+
+QListWidget::item {
+    margin: 3px;
+    padding: 5px;
+}
+
+QListWidget:item:selected:active {
+    border-radius: 3px;
+    padding: 5px;
+    margin: 3px;
+}
+QListView::item:focus{
+    border:none;
+    padding: 5px;
+}
+
+QLabel::focus {
+    border: none;
+}
+
+QGridLayout {
+    padding: 5px;
+}
+QHBoxLayout {
+    padding: 20px;
+}
+
+QIcon {
+    opacity: 10;
+}

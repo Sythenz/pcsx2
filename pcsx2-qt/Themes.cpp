@@ -45,41 +45,42 @@ void QtHost::UpdateApplicationTheme()
 	SetIconThemeFromStyle();
 }
 
+void QtHost::SetupStylesheet(const QPalette& palette, const QString& qss)
+{
+	qApp->setStyle(QStyleFactory::create("Fusion"));
+
+	//Load in our 'Normalize' stylesheet, used for formatting and fixing whitespacing issues (see comment in qss file).
+	QFile spacingfixes("Styles/pcsx2-spacingfixes.qss");
+	spacingfixes.open(QFile::ReadOnly);
+	QString pcsx2qss = QString(spacingfixes.readAll());
+	
+	// setPalette() shouldn't be necessary, as the documentation claims that setStyle() resets the palette, but it
+	// is here, to work around a bug in 6.4.x and 6.5.x where the palette doesn't restore after changing themes.
+	// this can be overriden in each theme with the same command.
+	qApp->setPalette(palette);
+
+	qApp->setStyleSheet(pcsx2qss + qss);
+}
+
 void QtHost::SetStyleFromSettings()
 {
 	const std::string theme(Host::GetBaseStringSettingValue("UI", "Theme", GetDefaultThemeName()));
-
+	
 	if (theme == "fusion")
 	{
-		// setPalette() shouldn't be necessary, as the documentation claims that setStyle() resets the palette, but it
-		// is here, to work around a bug in 6.4.x and 6.5.x where the palette doesn't restore after changing themes.
-		qApp->setPalette(QPalette());
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-		qApp->setStyleSheet(QString());
+		SetupStylesheet(QPalette(), QString());
 	}
 	else if (theme == "darkfusion")
 	{
-		// adapted from https://gist.github.com/QuantumCD/6245215
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-
-		QFile file("pcsx2-style.qss");
+		//Load any additional qss specified
+		QFile file("Styles/pcsx2-style.qss");
 		file.open(QFile::ReadOnly);
 		QString pcsx2style = QString(file.readAll());
-
-		QFont font("Roboto");
-		font.setStyleHint(QFont::SansSerif);
-		font.setWeight(QFont::Bold);
-		qApp->setFont(font);
-				
-		qApp->setStyleSheet(pcsx2style);
 		
-		//qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; } QWidget { padding: 3px; } ");
+		SetupStylesheet(QPalette(), pcsx2style);		
 	}
 	else if (theme == "darkfusionblue")
 	{
-		// adapted from https://gist.github.com/QuantumCD/6245215
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-
 		const QColor darkGray(53, 53, 53);
 		const QColor gray(128, 128, 128);
 		const QColor black(25, 25, 25);
@@ -107,16 +108,10 @@ void QtHost::SetStyleFromSettings()
 		darkPalette.setColor(QPalette::Disabled, QPalette::Text, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Light, darkGray);
 
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		SetupStylesheet(darkPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "UntouchedLagoon")
 	{
-		// Custom palette by RedDevilus, Tame (Light/Washed out) Green as main color and Grayish Blue as complimentary.
-		// Alternative white theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-
 		const QColor black(25, 25, 25);
 		const QColor darkteal(0, 77, 77);
 		const QColor teal(0, 128, 128);
@@ -143,16 +138,10 @@ void QtHost::SetStyleFromSettings()
 		standardPalette.setColor(QPalette::Disabled, QPalette::Text, darkteal.lighter());
 		standardPalette.setColor(QPalette::Disabled, QPalette::Light, tameTeal);
 
-		qApp->setPalette(standardPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		SetupStylesheet(standardPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "BabyPastel")
 	{
-		// Custom palette by RedDevilus, Blue as main color and blue as complimentary.
-		// Alternative light theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-
 		const QColor gray(150, 150, 150);
 		const QColor black(25, 25, 25);
 		const QColor redpinkish(200, 75, 132);
@@ -180,18 +169,14 @@ void QtHost::SetStyleFromSettings()
 		standardPalette.setColor(QPalette::Disabled, QPalette::WindowText, redpinkish);
 		standardPalette.setColor(QPalette::Disabled, QPalette::Text, redpinkish);
 		standardPalette.setColor(QPalette::Disabled, QPalette::Light, gray);
-
-		qApp->setPalette(standardPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		
+		SetupStylesheet(standardPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "PizzaBrown")
 	{
 		// Custom palette by KamFretoZ, a Pizza Tower Reference!
 		// With a mixtures of Light Brown, Peachy/Creamy White, Latte-like Color.
 		// Thanks to Jordan for the idea :P
-		// Alternative light theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
 
 		const QColor gray(128, 128, 128);
 		const QColor extr(248, 192, 88);
@@ -217,16 +202,13 @@ void QtHost::SetStyleFromSettings()
 		standardPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray.darker());
 		standardPalette.setColor(QPalette::Disabled, QPalette::Text, Qt::gray);
 		standardPalette.setColor(QPalette::Disabled, QPalette::Light, gray.lighter());
-
-		qApp->setPalette(standardPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #cc3f18; border: 1px solid white; }");
+		
+		SetupStylesheet(standardPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "PCSX2Blue")
 	{
 		// Custom palette by RedDevilus, White as main color and Blue as complimentary.
 		// Alternative light theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
 
 		const QColor blackish(35, 35, 35);
 		const QColor darkBlue(73, 97, 177);
@@ -253,17 +235,13 @@ void QtHost::SetStyleFromSettings()
 		standardPalette.setColor(QPalette::Disabled, QPalette::WindowText, darkBlue);
 		standardPalette.setColor(QPalette::Disabled, QPalette::Text, darkBlue);
 		standardPalette.setColor(QPalette::Disabled, QPalette::Light, darkBlue);
-
-		qApp->setPalette(standardPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		
+		SetupStylesheet(standardPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "ScarletDevilRed")
 	{
 		// Custom palette by RedDevilus, Red as main color and Purple as complimentary.
 		// Alternative dark theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-
 		const QColor darkRed(80, 45, 69);
 		const QColor purplishRed(120, 45, 69);
 		const QColor brightRed(200, 45, 69);
@@ -287,17 +265,14 @@ void QtHost::SetStyleFromSettings()
 		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, brightRed);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Text, brightRed);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Light, darkRed);
-
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		
+		SetupStylesheet(darkPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "CobaltSky")
 	{
 		// Custom palette by KamFretoZ, A soothing deep royal blue
 		// that are meant to be easy on the eyes as the main color.
 		// Alternative dark theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
 
 		const QColor gray(150, 150, 150);
 		const QColor royalBlue(29, 41, 81);
@@ -325,17 +300,13 @@ void QtHost::SetStyleFromSettings()
 		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Text, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Light, gray);
-
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #000080; border: 1px solid white; }");
+		
+		SetupStylesheet(darkPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "VioletAngelPurple")
 	{
 		// Custom palette by RedDevilus, Blue as main color and Purple as complimentary.
 		// Alternative dark theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
-
 		const QColor blackishblue(50, 25, 70);
 		const QColor darkerPurple(90, 30, 105);
 		const QColor nauticalPurple(110, 30, 125);
@@ -360,15 +331,12 @@ void QtHost::SetStyleFromSettings()
 		darkPalette.setColor(QPalette::Disabled, QPalette::Text, darkerPurple.darker());
 		darkPalette.setColor(QPalette::Disabled, QPalette::Light, nauticalPurple);
 
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		SetupStylesheet(darkPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "Ruby")
 	{
 		// Custom palette by Daisouji, Black as main color and Red as complimentary.
 		// Alternative dark (black) theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
 
 		const QColor gray(128, 128, 128);
 		const QColor slate(18, 18, 18);
@@ -393,16 +361,13 @@ void QtHost::SetStyleFromSettings()
 		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Text, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Light, slate.lighter());
-
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		
+		SetupStylesheet(darkPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "Sapphire")
 	{
 		// Custom palette by RedDevilus, Black as main color and Blue as complimentary.
 		// Alternative dark (black) theme.
-		qApp->setStyle(QStyleFactory::create("Fusion"));
 
 		const QColor gray(128, 128, 128);
 		const QColor slate(18, 18, 18);
@@ -427,10 +392,8 @@ void QtHost::SetStyleFromSettings()
 		darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Text, gray);
 		darkPalette.setColor(QPalette::Disabled, QPalette::Light, slate.lighter());
-
-		qApp->setPalette(darkPalette);
-
-		qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+		
+		SetupStylesheet(darkPalette, "QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
 	}
 	else if (theme == "Custom")
 	{

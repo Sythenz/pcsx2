@@ -429,7 +429,8 @@
     <None Include="Settings\FolderSettingsWidget.ui" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="pcsx2-style.qss" />
+    <Content Include="Styles\pcsx2-spacingfixes.qss" />
+    <Content Include="Styles\pcsx2-style.qss" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(SolutionDir)common\vsprops\QtCompile.targets" />

@@ -283,6 +283,9 @@ namespace QtHost
 	/// Downloads the specified URL to the provided path.
 	bool DownloadFile(QWidget* parent, const QString& title, std::string url, const std::string& path);
 
+	/// Sets up a theme with fusion, and handles additional qss style sheet concatenation.
+	void SetupStylesheet(const QPalette& palette, const QString& qss);
+
 	/// VM state, safe to access on UI thread.
 	bool IsVMValid();
 	bool IsVMPaused();

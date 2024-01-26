@@ -369,6 +369,12 @@
          </item>
          <item row="1" column="0">
           <widget class="QCheckBox" name="PCRTCAntiBlur">
+           <property name="toolTip">
+            <string>This is a quick test tooltip!</string>
+           </property>
+           <property name="toolTipDuration">
+            <number>2</number>
+           </property>
            <property name="text">
             <string>Anti-Blur</string>
            </property>
