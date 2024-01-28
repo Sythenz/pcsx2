@@ -23,7 +23,7 @@ QLabel {
 }
 
 #horizontalLayout_3 > QWidget {
-    margin: 5px;
+    margin: 3px;
 }
 
 QPlainTextEdit, QTextBrowser, #settingsCategory
@@ -33,13 +33,17 @@ QPlainTextEdit, QTextBrowser, #settingsCategory
     font-weight: normal;
 }
 
+QTextEdit {
+    padding: 3px;
+}
+
 /* Advanced Settings Widget first label */
 QScrollArea > QLabel {
-    padding: 5px;
+    padding: 3px;
 }
 
 QScrollArea {
-    padding: 5px;
+    padding: 3px;
     border: 0;
 }
 
@@ -51,7 +55,7 @@ QPlainTextEdit, QTextBrowser {
 }
 
 QTreeView {
-    padding: 5px;
+    padding: 3px;
 }
 
 #settingsCategory
@@ -64,7 +68,7 @@ QTreeView {
 
 QMenuBar {
     border: 0;
-    padding: 5px;
+    padding: 3px;
     font-family: Roboto, sans-serif;
 }
 
@@ -141,7 +145,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(:/icons/ui/caret_down2.png);
+    image: url(:/icons/ui/caret_down3.png);
     border: 0;
     left: -3px;
 }
@@ -155,7 +159,7 @@ QCheckBox {
 /* QLineEdit */
 
 QLineEdit {
-    padding: 5px;
+    padding: 3px;
 }
 
 /* QTabBar */
@@ -168,7 +172,6 @@ QTabBar {
 
 QTabWidget::pane {
     border: 0;
-    top: -1px;
 }
 
 /* QSpinBox */
@@ -188,22 +191,23 @@ QToolTip {
 }
 
 QListWidget {
-    padding: 5px;
+    padding: 3px;
 }
 
 QListWidget::item {
-    margin: 3px;
-    padding: 5px;
+    margin: 2px;
+    padding: 3px;
 }
 
 QListWidget:item:selected:active {
     border-radius: 3px;
-    padding: 5px;
-    margin: 3px;
+    padding: 3px;
+    margin: 2px;
 }
+
 QListView::item:focus{
     border:none;
-    padding: 5px;
+    padding: 3px;
 }
 
 QLabel::focus {
