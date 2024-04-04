@@ -53,6 +53,7 @@
 #include "common/Timer.h"
 
 #include "IconsFontAwesome5.h"
+#include "IconsPromptFont.h"
 #include "cpuinfo.h"
 #include "discord_rpc.h"
 #include "fmt/core.h"
@@ -65,6 +66,9 @@
 #include "common/RedtapeWindows.h"
 #include <objbase.h>
 #include <timeapi.h>
+#include <powrprof.h>
+#include <wil/com.h>
+#include <dxgi.h>
 #endif
 
 #ifdef __APPLE__
@@ -389,7 +393,6 @@ bool VMManager::Internal::CPUThreadInitialize()
 
 	InitializeCPUProviders();
 
-	GSinit();
 	USBinit();
 
 	// We want settings loaded so we choose the correct renderer for big picture mode.
@@ -421,9 +424,9 @@ void VMManager::Internal::CPUThreadShutdown()
 	PerformanceMetrics::SetCPUThread(Threading::ThreadHandle());
 
 	USBshutdown();
-	GSshutdown();
 
 	MTGS::ShutdownThread();
+	GSJoinSnapshotThreads();
 
 	ShutdownCPUProviders();
 
@@ -729,6 +732,22 @@ std::string VMManager::GetInputProfilePath(const std::string_view& name)
 	return Path::Combine(EmuFolders::InputProfiles, fmt::format("{}.ini", name));
 }
 
+std::string VMManager::GetDebuggerSettingsFilePath(const std::string_view& game_serial, u32 game_crc)
+{
+	std::string path;
+	if (!game_serial.empty() && game_crc != 0)
+	{
+		auto lock = Host::GetSettingsLock();
+		return Path::Combine(EmuFolders::DebuggerSettings, fmt::format("{}_{:08X}.json", game_serial, game_crc));
+	}
+	return path;
+}
+
+std::string VMManager::GetDebuggerSettingsFilePathForCurrentGame()
+{
+	return GetDebuggerSettingsFilePath(s_disc_serial, s_current_crc);
+}
+
 void VMManager::Internal::UpdateEmuFolders()
 {
 	const std::string old_cheats_directory(EmuFolders::Cheats);
@@ -833,7 +852,7 @@ std::string VMManager::GetSerialForGameSettings()
 bool VMManager::UpdateGameSettingsLayer()
 {
 	std::unique_ptr<INISettingsInterface> new_interface;
-	if (s_disc_crc != 0 && EmuConfig.EnablePerGameSettings)
+	if (s_disc_crc != 0)
 	{
 		std::string filename(GetGameSettingsPath(GetSerialForGameSettings(), s_disc_crc));
 		if (!FileSystem::FileExists(filename.c_str()))
@@ -1480,6 +1499,10 @@ void VMManager::Shutdown(bool save_resume_state)
 			Console.Error("Failed to save resume state");
 	}
 
+	// end input recording before clearing state
+	if (g_InputRecording.isActive())
+		g_InputRecording.stop();
+
 	SaveSessionTime(s_disc_serial);
 	s_elf_override = {};
 	ClearELFInfo();
@@ -1521,6 +1544,7 @@ void VMManager::Shutdown(bool save_resume_state)
 	{
 		MTGS::WaitGS(false, false, false);
 		MTGS::ResetGS(true);
+		MTGS::GameChanged();
 	}
 	else
 	{
@@ -2216,6 +2240,153 @@ bool VMManager::IsLoadableFileName(const std::string_view& path)
 	return IsDiscFileName(path) || IsElfFileName(path) || IsGSDumpFileName(path) || IsBlockDumpFileName(path);
 }
 
+#ifdef _WIN32
+inline void LogUserPowerPlan()
+{
+	wil::unique_any<GUID*, decltype(&::LocalFree), ::LocalFree> pPwrGUID;
+	DWORD ret = PowerGetActiveScheme(NULL, pPwrGUID.put());
+	if (ret != ERROR_SUCCESS)
+		return;
+
+	UCHAR aBuffer[2048];
+	DWORD aBufferSize = sizeof(aBuffer);
+	ret = PowerReadFriendlyName(NULL, pPwrGUID.get(), &NO_SUBGROUP_GUID, NULL, aBuffer, &aBufferSize);
+	std::string friendlyName(StringUtil::WideStringToUTF8String((wchar_t*)aBuffer));
+	if (ret != ERROR_SUCCESS)
+		return;
+
+	DWORD acMax = 0, acMin = 0, dcMax = 0, dcMin = 0;
+
+	if (PowerReadACValueIndex(NULL, pPwrGUID.get(), &GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MAXIMUM, &acMax) ||
+		PowerReadACValueIndex(NULL, pPwrGUID.get(), &GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MINIMUM, &acMin) ||
+		PowerReadDCValueIndex(NULL, pPwrGUID.get(), &GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MAXIMUM, &dcMax) ||
+		PowerReadDCValueIndex(NULL, pPwrGUID.get(), &GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MINIMUM, &dcMin))
+		return;
+
+	Console.WriteLnFmt(
+		"  Power Profile    = '{}'\n"
+		"  Power States (min/max)\n"
+		"    AC             = {}% / {}%\n"
+		"    Battery        = {}% / {}%\n", friendlyName.c_str(), acMin, acMax, dcMin, dcMax);
+}
+#endif
+
+#if 0
+#if defined(__linux__) || defined(_WIN32)
+void LogGPUCapabilities()
+{
+	Console.WriteLn(Color_StrongBlack, "Graphics Adapters Detected:");
+#if defined(_WIN32)
+	IDXGIFactory1* pFactory = nullptr;
+	if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory)))
+		return;
+
+	UINT i = 0;
+	IDXGIAdapter* pAdapter = nullptr;
+	while (pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+	{
+		DXGI_ADAPTER_DESC desc;
+		LARGE_INTEGER umdver;
+		if (SUCCEEDED(pAdapter->GetDesc(&desc)) && SUCCEEDED(pAdapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umdver)))
+		{
+			Console.WriteLnFmt(
+				"  GPU              = {}\n"
+				"  Driver Version   = {}.{}.{}.{}\n",
+				StringUtil::WideStringToUTF8String(desc.Description),
+				umdver.QuadPart >> 48,
+				(umdver.QuadPart >> 32) & 0xFFFF,
+				(umdver.QuadPart >> 16) & 0xFFFF,
+				umdver.QuadPart & 0xFFFF);
+
+			i++;
+			pAdapter->Release();
+			pAdapter = nullptr;
+		}
+		else
+		{
+			pAdapter->Release();
+			pAdapter = nullptr;
+
+			break;
+		}
+	}
+
+	if (pAdapter)
+		pAdapter->Release();
+	pFactory->Release();
+#else
+	// Credits to neofetch for the following (modified) script
+	std::string gpu_script = R"gpu_script(
+	lspci -mm |
+	awk -F '\"|\" \"|\\(' \
+	'/"Display|"3D|"VGA/ {
+		a[$0] = $1 "" $3 " " ($(NF-1) ~ /^$|^Device [[:xdigit:]]+$/ ? $4 : $(NF-1))
+	}
+	END { for (i in a) {
+	if (!seen[a[i]]++) {
+		sub("^[^ ]+ ", "", a[i]);
+		print a[i]
+	}
+	}}'
+	)gpu_script";
+
+	FILE* f = popen(gpu_script.c_str(), "r");
+	if (f)
+	{
+		char buffer[1024];
+		while (fgets(buffer, sizeof(buffer), f))
+		{
+			std::string card(buffer);
+			std::string version = "Unknown\n";
+			if (card.find("NVIDIA") != std::string::npos)
+			{
+				// Assumes that all NVIDIA cards use the same driver
+				FILE* fnsmi = popen("nvidia-smi --query-gpu=driver_version --format=csv,noheader", "r");
+				if (fnsmi)
+				{
+					if (fgets(buffer, sizeof(buffer), fnsmi))
+					{
+						version = std::string(buffer);
+					}
+					pclose(fnsmi);
+				}
+			}
+			else
+			{
+				// Assuming non-NVIDIA cards are using the mesa driver
+				FILE* fglxinfo = popen("glxinfo | sed -n 's/OpenGL version string:/OGL/p'", "r");
+				if (fglxinfo)
+				{
+					if (fgets(buffer, sizeof(buffer), fglxinfo))
+					{
+						version = std::string(buffer);
+
+						// This path is taken if the card was Intel or AMD
+						// If glxinfo is reporting NVIDIA, then it's likely that this is a multi-gpu system
+						// and that this version doesn't apply to this AMD / Intel device
+						// Alternatively we could use vulkaninfo, which allows us to select the device
+						// But I was unable to get that to work on my system
+						// So for now, we cannot get the iGPU version on NVIDIA dGPU systems
+						if (version.find("NVIDIA") != std::string::npos)
+						{
+							version = "Unknown (OpenGL default is NVIDIA)\n";
+						}
+					}
+					pclose(fglxinfo);
+				}
+			}
+			Console.WriteLnFmt(
+				"  GPU              = {}"
+				"  Driver  Version  = {}",
+				card, version);
+		}
+		pclose(f);
+	}
+#endif
+}
+#endif
+#endif
+
 void VMManager::LogCPUCapabilities()
 {
 	Console.WriteLn(Color_StrongGreen, "PCSX2 " GIT_REV);
@@ -2233,7 +2404,9 @@ void VMManager::LogCPUCapabilities()
 	Console.WriteLnFmt("  Processor        = {}", cpuinfo_get_package(0)->name);
 	Console.WriteLnFmt("  Core Count       = {} cores", cpuinfo_get_cores_count());
 	Console.WriteLnFmt("  Thread Count     = {} threads", cpuinfo_get_processors_count());
-	Console.WriteLn();
+#ifdef _WIN32
+	LogUserPowerPlan();
+#endif
 
 	std::string features;
 	if (cpuinfo_has_x86_avx())
@@ -2246,6 +2419,10 @@ void VMManager::LogCPUCapabilities()
 	Console.WriteLn(Color_StrongBlack, "x86 Features Detected:");
 	Console.WriteLnFmt("  {}", features);
 	Console.WriteLn();
+
+#if 0
+	LogGPUCapabilities();
+#endif
 }
 
 
@@ -2468,10 +2645,12 @@ void VMManager::Internal::VSyncOnCPUThread()
 	Achievements::FrameUpdate();
 
 	PollDiscordPresence();
+}
 
+void VMManager::Internal::PollInputOnCPUThread()
+{
+	Host::PumpMessagesOnCPUThread();
 	InputManager::PollSources();
-
-	Host::VSyncOnCPUThread();
 
 	if (EmuConfig.EnableRecordingTools)
 	{
@@ -2801,8 +2980,8 @@ void VMManager::WarnAboutUnsafeSettings()
 	}
 	if (EmuConfig.GS.AccurateBlendingUnit <= AccBlendLevel::Minimum)
 	{
-		append(ICON_FA_BLENDER,
-			TRANSLATE_SV("VMManager", "Blending is below basic, this may break effects in some games."));
+		append(ICON_FA_PAINT_BRUSH,
+			TRANSLATE_SV("VMManager", "Blending Accuracy is below Basic, this may break effects in some games."));
 	}
 	if (EmuConfig.GS.HWDownloadMode != GSHardwareDownloadMode::Enabled)
 	{
@@ -2812,30 +2991,30 @@ void VMManager::WarnAboutUnsafeSettings()
 	}
 	if (EmuConfig.Cpu.FPUFPCR.GetRoundMode() != FPRoundMode::ChopZero)
 	{
-		append(ICON_FA_MICROCHIP,
+		append(ICON_PF_MICROCHIP,
 			TRANSLATE_SV("VMManager", "EE FPU Round Mode is not set to default, this may break some games."));
 	}
 	if (!EmuConfig.Cpu.Recompiler.fpuOverflow || EmuConfig.Cpu.Recompiler.fpuExtraOverflow ||
 		EmuConfig.Cpu.Recompiler.fpuFullMode)
 	{
-		append(ICON_FA_MICROCHIP,
+		append(ICON_PF_MICROCHIP,
 			TRANSLATE_SV("VMManager", "EE FPU Clamp Mode is not set to default, this may break some games."));
 	}
 	if (EmuConfig.Cpu.VU0FPCR.GetRoundMode() != FPRoundMode::ChopZero)
 	{
-		append(ICON_FA_MICROCHIP,
+		append(ICON_PF_MICROCHIP,
 			TRANSLATE_SV("VMManager", "VU0 Round Mode is not set to default, this may break some games."));
 	}
 	if (EmuConfig.Cpu.VU1FPCR.GetRoundMode() != FPRoundMode::ChopZero)
 	{
-		append(ICON_FA_MICROCHIP,
+		append(ICON_PF_MICROCHIP,
 			TRANSLATE_SV("VMManager", "VU1 Round Mode is not set to default, this may break some games."));
 	}
 	if (!EmuConfig.Cpu.Recompiler.vu0Overflow || EmuConfig.Cpu.Recompiler.vu0ExtraOverflow ||
 		EmuConfig.Cpu.Recompiler.vu0SignOverflow || !EmuConfig.Cpu.Recompiler.vu1Overflow ||
 		EmuConfig.Cpu.Recompiler.vu1ExtraOverflow || EmuConfig.Cpu.Recompiler.vu1SignOverflow)
 	{
-		append(ICON_FA_MICROCHIP,
+		append(ICON_PF_MICROCHIP,
 			TRANSLATE_SV("VMManager", "VU Clamp Mode is not set to default, this may break some games."));
 	}
 	if (!EmuConfig.EnableGameFixes)

@@ -9,7 +9,7 @@
 
 #include "Config.h"
 #include "Host.h"
-#include "IconsFontAwesome5.h"
+#include "IconsPromptFont.h"
 
 #include "common/Console.h"
 #include "common/FileSystem.h"
@@ -511,7 +511,7 @@ bool FolderMemoryCard::AddFolder(MemoryCardFileEntry* const dirEntry, const std:
 				dirEntry->entry.data.length++;
 
 				// set metadata
-				const std::string metaFileName(Path::Combine(Path::Combine(dirPath, "_pcsx2_meta_directory"), file.m_fileName));
+				const std::string metaFileName(Path::Combine(Path::Combine(dirPath, file.m_fileName), "_pcsx2_meta_directory"));
 				if (auto metaFile = FileSystem::OpenManagedCFile(metaFileName.c_str(), "rb"); metaFile)
 				{
 					if (std::fread(&newDirEntry->entry.raw, 1, sizeof(newDirEntry->entry.raw), metaFile.get()) < 0x60)
@@ -2342,7 +2342,7 @@ s32 FolderMemoryCardAggregator::Save(uint slot, const u8* src, u32 adr, int size
 		if (elapsed > std::chrono::seconds(5))
 		{
 			const std::string_view filename = Path::GetFileName(m_cards[slot].GetFolderName());
-			Host::AddIconOSDMessage(fmt::format("MemoryCardSave{}", slot), ICON_FA_SD_CARD,
+			Host::AddIconOSDMessage(fmt::format("MemoryCardSave{}", slot), ICON_PF_MEMORY_CARD,
 				fmt::format(TRANSLATE_FS("MemoryCard", "Memory Card '{}' was saved to storage."), filename),
 				Host::OSD_INFO_DURATION);
 

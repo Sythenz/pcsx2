@@ -150,11 +150,11 @@ namespace EmuFolders
 	std::string AppRoot;
 	std::string DataRoot;
 	std::string Settings;
+	std::string DebuggerSettings;
 	std::string Bios;
 	std::string Snapshots;
 	std::string Savestates;
 	std::string MemoryCards;
-	std::string Langs;
 	std::string Logs;
 	std::string Cheats;
 	std::string Patches;
@@ -781,7 +781,6 @@ bool Pcsx2Config::GSOptions::RestartOptionsAreEqual(const GSOptions& right) cons
 		   OpEqu(UseDebugDevice) &&
 		   OpEqu(UseBlitSwapChain) &&
 		   OpEqu(DisableShaderCache) &&
-		   OpEqu(DisableDualSourceBlend) &&
 		   OpEqu(DisableFramebufferFetch) &&
 		   OpEqu(DisableVertexShaderExpand) &&
 		   OpEqu(DisableThreadedPresentation) &&
@@ -834,7 +833,6 @@ void Pcsx2Config::GSOptions::LoadSave(SettingsWrapper& wrap)
 	GSSettingBool(UseDebugDevice);
 	GSSettingBool(UseBlitSwapChain);
 	GSSettingBool(DisableShaderCache);
-	GSSettingBool(DisableDualSourceBlend);
 	GSSettingBool(DisableFramebufferFetch);
 	GSSettingBool(DisableVertexShaderExpand);
 	GSSettingBool(DisableThreadedPresentation);
@@ -1499,9 +1497,7 @@ void Pcsx2Config::EmulationSpeedOptions::LoadSave(SettingsWrapper& wrap)
 	SettingsWrapEntry(SlomoScalar);
 
 	// This was in the wrong place... but we can't change it without breaking existing configs.
-	//SettingsWrapBitBool(FrameLimitEnable);
 	//SettingsWrapBitBool(SyncToHostRefreshRate);
-	FrameLimitEnable = wrap.EntryBitBool("EmuCore/GS", "FrameLimitEnable", FrameLimitEnable, FrameLimitEnable);
 	SyncToHostRefreshRate = wrap.EntryBitBool("EmuCore/GS", "SyncToHostRefreshRate", SyncToHostRefreshRate, SyncToHostRefreshRate);
 }
 
@@ -1692,17 +1688,11 @@ Pcsx2Config::Pcsx2Config()
 	McdFolderAutoManage = true;
 	EnablePatches = true;
 	EnableFastBoot = true;
-	EnablePerGameSettings = true;
 	EnableRecordingTools = true;
 	EnableGameFixes = true;
 	InhibitScreensaver = true;
 	BackupSavestate = true;
 	SavestateZstdCompression = true;
-
-#ifdef _WIN32
-	McdCompressNTFS = true;
-#endif
-
 	WarnAboutUnsafeSettings = true;
 
 	// To be moved to FileMemoryCard pluign (someday)
@@ -1732,7 +1722,6 @@ void Pcsx2Config::LoadSaveCore(SettingsWrapper& wrap)
 	SettingsWrapBitBool(EnableNoInterlacingPatches);
 	SettingsWrapBitBool(EnableFastBoot);
 	SettingsWrapBitBool(EnableFastBootFastForward);
-	SettingsWrapBitBool(EnablePerGameSettings);
 	SettingsWrapBitBool(EnableRecordingTools);
 	SettingsWrapBitBool(EnableGameFixes);
 	SettingsWrapBitBool(SaveStateOnShutdown);
@@ -1770,10 +1759,6 @@ void Pcsx2Config::LoadSaveCore(SettingsWrapper& wrap)
 	BaseFilenames.LoadSave(wrap);
 	EmulationSpeed.LoadSave(wrap);
 	LoadSaveMemcards(wrap);
-
-#ifdef _WIN32
-	SettingsWrapEntry(McdCompressNTFS);
-#endif
 
 	if (wrap.IsLoading())
 	{
@@ -1913,7 +1898,7 @@ void EmuFolders::SetResourcesDirectory()
 bool EmuFolders::ShouldUsePortableMode()
 {
 	// Check whether portable.ini exists in the program directory.
-	return FileSystem::FileExists(Path::Combine(AppRoot, "portable.ini").c_str());
+	return FileSystem::FileExists(Path::Combine(AppRoot, "portable.ini").c_str()) || FileSystem::FileExists(Path::Combine(AppRoot, "portable.txt").c_str());
 }
 
 void EmuFolders::SetDataDirectory()
@@ -2014,6 +1999,7 @@ void EmuFolders::LoadConfig(SettingsInterface& si)
 	Textures = LoadPathFromSettings(si, DataRoot, "Textures", "textures");
 	InputProfiles = LoadPathFromSettings(si, DataRoot, "InputProfiles", "inputprofiles");
 	Videos = LoadPathFromSettings(si, DataRoot, "Videos", "videos");
+	DebuggerSettings = LoadPathFromSettings(si, Settings, "DebuggerSettings", "debuggersettings");
 
 	Console.WriteLn("BIOS Directory: %s", Bios.c_str());
 	Console.WriteLn("Snapshots Directory: %s", Snapshots.c_str());
@@ -2030,6 +2016,7 @@ void EmuFolders::LoadConfig(SettingsInterface& si)
 	Console.WriteLn("Textures Directory: %s", Textures.c_str());
 	Console.WriteLn("Input Profile Directory: %s", InputProfiles.c_str());
 	Console.WriteLn("Video Dumping Directory: %s", Videos.c_str());
+	Console.WriteLn("Debugger Settings Directory: %s", DebuggerSettings.c_str());
 }
 
 bool EmuFolders::EnsureFoldersExist()
@@ -2045,6 +2032,7 @@ bool EmuFolders::EnsureFoldersExist()
 	result = FileSystem::CreateDirectoryPath(Covers.c_str(), false) && result;
 	result = FileSystem::CreateDirectoryPath(GameSettings.c_str(), false) && result;
 	result = FileSystem::CreateDirectoryPath(UserResources.c_str(), false) && result;
+	result = FileSystem::CreateDirectoryPath(DebuggerSettings.c_str(), false) && result;
 	result = FileSystem::CreateDirectoryPath(Cache.c_str(), false) && result;
 	result = FileSystem::CreateDirectoryPath(Textures.c_str(), false) && result;
 	result = FileSystem::CreateDirectoryPath(InputProfiles.c_str(), false) && result;

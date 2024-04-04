@@ -21,6 +21,7 @@
 		<file>icons/black/svg/debug-step-into-line.svg</file>
 		<file>icons/black/svg/debug-step-out-line.svg</file>
 		<file>icons/black/svg/debug-step-over-line.svg</file>
+		<file>icons/black/svg/debugger-line.svg</file>
 		<file>icons/black/svg/delete-back-2-line.svg</file>
 		<file>icons/black/svg/disc-2-line.svg</file>
 		<file>icons/black/svg/disc-eject-line.svg</file>
@@ -54,7 +55,6 @@
 		<file>icons/black/svg/guncon2-line.svg</file>
 		<file>icons/black/svg/headset-line.svg</file>
 		<file>icons/black/svg/heart-circle-line.svg</file>
-		<file>icons/black/svg/heart-monitor-line.svg</file>
 		<file>icons/black/svg/image-fill.svg</file>
 		<file>icons/black/svg/interface-line.svg</file>
 		<file>icons/black/svg/keyboard-2-line.svg</file>
@@ -69,6 +69,8 @@
 		<file>icons/black/svg/mouse-line.svg</file>
 		<file>icons/black/svg/msd-line.svg</file>
 		<file>icons/black/svg/pause-line.svg</file>
+		<file>icons/black/svg/pencil-line.svg</file>
+		<file>icons/black/svg/pin-filled.svg</file>
 		<file>icons/black/svg/play-line.svg</file>
 		<file>icons/black/svg/plus-line.svg</file>
 		<file>icons/black/svg/Popn-line.svg</file>
@@ -115,6 +117,7 @@
 		<file>icons/white/svg/debug-step-into-line.svg</file>
 		<file>icons/white/svg/debug-step-out-line.svg</file>
 		<file>icons/white/svg/debug-step-over-line.svg</file>
+		<file>icons/white/svg/debugger-line.svg</file>
 		<file>icons/white/svg/delete-back-2-line.svg</file>
 		<file>icons/white/svg/disc-2-line.svg</file>
 		<file>icons/white/svg/disc-eject-line.svg</file>
@@ -148,7 +151,6 @@
 		<file>icons/white/svg/guncon2-line.svg</file>
 		<file>icons/white/svg/headset-line.svg</file>
 		<file>icons/white/svg/heart-circle-line.svg</file>
-		<file>icons/white/svg/heart-monitor-line.svg</file>
 		<file>icons/white/svg/image-fill.svg</file>
 		<file>icons/white/svg/interface-line.svg</file>
 		<file>icons/white/svg/keyboard-2-line.svg</file>
@@ -163,6 +165,8 @@
 		<file>icons/white/svg/mouse-line.svg</file>
 		<file>icons/white/svg/msd-line.svg</file>
 		<file>icons/white/svg/pause-line.svg</file>
+		<file>icons/white/svg/pencil-line.svg</file>
+		<file>icons/white/svg/pin-filled.svg</file>
 		<file>icons/white/svg/play-line.svg</file>
 		<file>icons/white/svg/plus-line.svg</file>
 		<file>icons/white/svg/Popn-line.svg</file>

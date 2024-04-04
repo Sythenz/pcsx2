@@ -103,9 +103,11 @@
     <ClCompile Include="Debugger\CpuWidget.cpp" />
     <ClCompile Include="Debugger\DebuggerWindow.cpp" />
     <ClCompile Include="Debugger\DisassemblyWidget.cpp" />
+    <ClCompile Include="Debugger\MemorySearchWidget.cpp" />
     <ClCompile Include="Debugger\MemoryViewWidget.cpp" />
     <ClCompile Include="Debugger\RegisterWidget.cpp" />
     <ClCompile Include="Debugger\BreakpointDialog.cpp" />
+    <ClCompile Include="Debugger\DebuggerSettingsManager.cpp" />
     <ClCompile Include="Debugger\Models\BreakpointModel.cpp" />
     <ClCompile Include="Debugger\Models\ThreadModel.cpp" />
     <ClCompile Include="Debugger\Models\StackModel.cpp" />
@@ -193,9 +195,11 @@
     <QtMoc Include="Debugger\CpuWidget.h" />
     <QtMoc Include="Debugger\DebuggerWindow.h" />
     <QtMoc Include="Debugger\DisassemblyWidget.h" />
+    <QtMoc Include="Debugger\MemorySearchWidget.h" />
     <QtMoc Include="Debugger\MemoryViewWidget.h" />
     <QtMoc Include="Debugger\RegisterWidget.h" />
     <QtMoc Include="Debugger\BreakpointDialog.h" />
+    <ClInclude Include="Debugger\DebuggerSettingsManager.h" />
     <QtMoc Include="Debugger\Models\BreakpointModel.h" />
     <QtMoc Include="Debugger\Models\ThreadModel.h" />
     <QtMoc Include="Debugger\Models\StackModel.h" />
@@ -250,6 +254,7 @@
     <ClCompile Include="$(IntDir)Debugger\moc_CpuWidget.cpp" />
     <ClCompile Include="$(IntDir)Debugger\moc_DisassemblyWidget.cpp" />
     <ClCompile Include="$(IntDir)Debugger\moc_RegisterWidget.cpp" />
+    <ClCompile Include="$(IntDir)Debugger\moc_MemorySearchWidget.cpp" />
     <ClCompile Include="$(IntDir)Debugger\moc_MemoryViewWidget.cpp" />
     <ClCompile Include="$(IntDir)Debugger\moc_BreakpointDialog.cpp" />
     <ClCompile Include="$(IntDir)Debugger\Models\moc_BreakpointModel.cpp" />
@@ -378,6 +383,9 @@
     <QtUi Include="Debugger\RegisterWidget.ui">
       <FileType>Document</FileType>
     </QtUi>
+    <QtUi Include="Debugger\MemorySearchWidget.ui">
+      <FileType>Document</FileType>
+    </QtUi>
     <QtUi Include="Debugger\MemoryViewWidget.ui">
       <FileType>Document</FileType>
     </QtUi>
@@ -426,6 +434,7 @@
       <FileType>Document</FileType>
     </QtUi>
     <None Include="Settings\ControllerBindingWidget_Popn.ui" />
+    <None Include="Settings\ControllerMappingSettingsDialog.ui" />
     <None Include="Settings\FolderSettingsWidget.ui" />
   </ItemGroup>
   <ItemGroup>

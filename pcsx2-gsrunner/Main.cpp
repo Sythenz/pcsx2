@@ -33,6 +33,7 @@
 #include "pcsx2/GameList.h"
 #include "pcsx2/Host.h"
 #include "pcsx2/INISettingsInterface.h"
+#include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
 #include "pcsx2/Input/InputManager.h"
 #include "pcsx2/MTGS.h"
@@ -116,9 +117,6 @@ bool GSRunner::InitializeConfig()
 	// none of the bindings are going to resolve to anything
 	Pad::ClearPortBindings(si, 0);
 	si.ClearSection("Hotkeys");
-
-	// make sure any gamesettings inis in your tree don't get loaded
-	si.SetBoolValue("EmuCore", "EnablePerGameSettings", false);
 
 	// force logging
 	si.SetBoolValue("Logging", "EnableSystemConsole", !s_no_console);
@@ -387,6 +385,11 @@ void Host::OnAchievementsRefreshed()
 }
 
 void Host::OnCoverDownloaderOpenRequested()
+{
+	// noop
+}
+
+void Host::OnCreateMemoryCardOpenRequested()
 {
 	// noop
 }
@@ -701,7 +704,7 @@ int main(int argc, char* argv[])
 	return EXIT_SUCCESS;
 }
 
-void Host::VSyncOnCPUThread()
+void Host::PumpMessagesOnCPUThread()
 {
 	// update GS thread copy of frame number
 	MTGS::RunOnGSThread([frame_number = GSDumpReplayer::GetFrameNumber()]() { s_dump_frame_number = frame_number; });

@@ -20,6 +20,7 @@
 #include "GS/Renderers/Null/GSRendererNull.h"
 #include "GS/Renderers/HW/GSRendererHW.h"
 #include "GS/Renderers/HW/GSTextureReplacements.h"
+#include "VMManager.h"
 
 #ifdef ENABLE_OPENGL
 #include "GS/Renderers/OpenGL/GSDeviceOGL.h"
@@ -56,21 +57,6 @@ Pcsx2Config::GSOptions GSConfig;
 static GSRendererType GSCurrentRenderer;
 
 static u64 s_next_manual_present_time;
-
-void GSinit()
-{
-	GSVertexSW::InitStatic();
-
-	GSUtil::Init();
-}
-
-void GSshutdown()
-{
-	GSclose();
-
-	// ensure all screenshots have been saved
-	GSJoinSnapshotThreads();
-}
 
 GSRendererType GSGetCurrentRenderer()
 {
@@ -190,6 +176,8 @@ static bool OpenGSRenderer(GSRendererType renderer, u8* basemem)
 {
 	// Must be done first, initialization routines in GSState use GSIsHardwareRenderer().
 	GSCurrentRenderer = renderer;
+
+	GSVertexSW::InitStatic();
 
 	if (renderer == GSRendererType::Null)
 	{
@@ -333,6 +321,9 @@ bool GSopen(const Pcsx2Config::GSOptions& config, GSRendererType renderer, u8* b
 
 void GSclose()
 {
+	if (GSCapture::IsCapturing())
+		GSCapture::EndCapture();
+
 	CloseGSRenderer();
 	CloseGSDevice(true);
 	Host::ReleaseRenderWindow();
@@ -492,6 +483,9 @@ void GSGameChanged()
 {
 	if (GSIsHardwareRenderer())
 		GSTextureReplacements::GameChanged();
+
+	if (!VMManager::HasValidVM() && GSCapture::IsCapturing())
+		GSCapture::EndCapture();
 }
 
 bool GSHasDisplayWindow()
@@ -694,7 +688,7 @@ void GSUpdateConfig(const Pcsx2Config::GSOptions& new_config)
 
 	// Handle OSD scale changes by pushing a window resize through.
 	if (new_config.OsdScale != old_config.OsdScale)
-		ImGuiManager::WindowResized();
+		ImGuiManager::RequestScaleUpdate();
 
 	// Options which need a full teardown/recreate.
 	if (!GSConfig.RestartOptionsAreEqual(old_config))

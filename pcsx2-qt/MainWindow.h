@@ -87,6 +87,7 @@ public:
 	void connectVMThreadSignals(EmuThread* thread);
 	void startupUpdateCheck();
 	void resetSettings(bool ui);
+	void quit();
 
 	/// Locks the VM by pausing it, while a popup dialog is displayed.
 	VMLock pauseAndLockVM();
@@ -158,6 +159,7 @@ private Q_SLOTS:
 	void onToolsOpenDataDirectoryTriggered();
 	void onToolsCoverDownloaderTriggered();
 	void onToolsEditCheatsPatchesTriggered(bool cheats);
+	void onCreateMemoryCardOpenRequested();
 	void updateTheme();
 	void reloadThemeSpecificImages();
 	void updateLanguage();

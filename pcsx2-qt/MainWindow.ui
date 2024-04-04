@@ -21,6 +21,9 @@
     <normalon>:/icons/AppIcon64.png</normalon>
    </iconset>
   </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
   <widget class="QStackedWidget" name="mainContainer"/>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -1089,10 +1092,18 @@
    <property name="text">
     <string>Edit Cheats...</string>
    </property>
+   <property name="icon">
+    <iconset theme="pencil-line">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
   </action>
   <action name="actionEditPatches">
    <property name="text">
     <string>Edit Patches...</string>
+   </property>
+   <property name="icon">
+    <iconset theme="pencil-line">
+     <normaloff>.</normaloff>.</iconset>
    </property>
   </action>
  </widget>

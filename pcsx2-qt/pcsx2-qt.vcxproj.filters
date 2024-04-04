@@ -272,6 +272,9 @@
     <ClCompile Include="Debugger\RegisterWidget.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
+    <ClCompile Include="Debugger\MemorySearchWidget.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
     <ClCompile Include="Debugger\MemoryViewWidget.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
@@ -300,6 +303,9 @@
       <Filter>moc</Filter>
     </ClCompile>
     <ClCompile Include="$(IntDir)Debugger\moc_RegisterWidget.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)Debugger\moc_MemorySearchWidget.cpp">
       <Filter>moc</Filter>
     </ClCompile>
     <ClCompile Include="$(IntDir)Debugger\moc_MemoryViewWidget.cpp">
@@ -346,6 +352,9 @@
     <ClCompile Include="$(IntDir)moc_LogWindow.cpp">
       <Filter>moc</Filter>
     </ClCompile>
+    <ClCompile Include="Debugger\DebuggerSettingsManager.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="..\pcsx2\windows\PCSX2.manifest">
@@ -364,6 +373,9 @@
     </ClInclude>
     <ClInclude Include="Settings\MemoryCardConvertWorker.h">
       <Filter>Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="Debugger\DebuggerSettingsManager.h">
+      <Filter>Debugger</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -475,6 +487,9 @@
       <Filter>Debugger</Filter>
     </QtMoc>
     <QtMoc Include="Debugger\RegisterWidget.h">
+      <Filter>Debugger</Filter>
+    </QtMoc>
+    <QtMoc Include="Debugger\MemorySearchWidget.h">
       <Filter>Debugger</Filter>
     </QtMoc>
     <QtMoc Include="Debugger\MemoryViewWidget.h">
@@ -619,6 +634,9 @@
     <QtUi Include="Debugger\RegisterWidget.ui">
       <Filter>Debugger</Filter>
     </QtUi>
+    <QtUi Include="Debugger\MemorySearchWidget.ui">
+      <Filter>Debugger</Filter>
+    </QtUi>
     <QtUi Include="Debugger\MemoryViewWidget.ui">
       <Filter>Debugger</Filter>
     </QtUi>
@@ -653,6 +671,9 @@
       <Filter>Settings</Filter>
     </None>
     <None Include="Settings\ControllerBindingWidget_Popn.ui">
+      <Filter>Settings</Filter>
+    </None>
+    <None Include="Settings\ControllerMappingSettingsDialog.ui">
       <Filter>Settings</Filter>
     </None>
   </ItemGroup>

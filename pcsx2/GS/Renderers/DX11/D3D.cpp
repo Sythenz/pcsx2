@@ -17,6 +17,7 @@
 
 #include "IconsFontAwesome5.h"
 
+#include <appmodel.h>
 #include <array>
 #include <d3d11.h>
 #include <d3d12.h>
@@ -358,6 +359,7 @@ GSRendererType D3D::GetPreferredRenderer()
 		static const D3D_FEATURE_LEVEL check[] = {
 			D3D_FEATURE_LEVEL_12_0,
 			D3D_FEATURE_LEVEL_11_0,
+			D3D_FEATURE_LEVEL_10_0,
 		};
 
 		D3D_FEATURE_LEVEL feature_level;
@@ -380,7 +382,29 @@ GSRendererType D3D::GetPreferredRenderer()
 			Console.Error("D3D12CreateDevice() for automatic renderer failed: %08X", hr);
 		return device;
 	};
-	const auto check_vulkan_supported = []() {
+	static constexpr auto check_for_mapping_layers = []() {
+		PCWSTR familyName = L"Microsoft.D3DMappingLayers_8wekyb3d8bbwe";
+		UINT32 numPackages = 0, bufferLength = 0;
+		const DWORD error = GetPackagesByPackageFamily(familyName, &numPackages, nullptr, &bufferLength, nullptr);
+		if (error == ERROR_INSUFFICIENT_BUFFER || numPackages > 0)
+		{
+			Host::AddIconOSDMessage("VKDriverUnsupported", ICON_FA_TV,
+				TRANSLATE_STR("GS",
+					"Your system has the \"OpenCL, OpenGL, and Vulkan Compatibility Pack\" installed.\n"
+					"This Vulkan driver crashes PCSX2 on some GPUs.\n" 
+					"To use the Vulkan renderer, you should remove this app package."),
+				Host::OSD_WARNING_DURATION);
+			return true;
+		}
+
+		return false;
+	};
+	static constexpr auto check_vulkan_supported = []() {
+		// Don't try to enumerate Vulkan devices if the DX12 Vulkan driver is present.
+		// It crashes on AMD GPUs.
+		if (check_for_mapping_layers())
+			return false;
+
 		std::vector<std::string> vk_adapter_names;
 		GSDeviceVK::GetAdaptersAndFullscreenModes(&vk_adapter_names, nullptr);
 		if (!vk_adapter_names.empty())
@@ -461,6 +485,13 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D_FEAT
 	const char* target;
 	switch (feature_level)
 	{
+		case D3D_FEATURE_LEVEL_10_0:
+		{
+			static constexpr std::array<const char*, 4> targets = {{"vs_4_0", "ps_4_0", "cs_4_0"}};
+			target = targets[static_cast<int>(type)];
+		}
+		break;
+
 		case D3D_FEATURE_LEVEL_11_0:
 		{
 			static constexpr std::array<const char*, 4> targets = {{"vs_5_0", "ps_5_0", "cs_5_0"}};

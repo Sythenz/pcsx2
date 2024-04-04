@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2002-2023 PCSX2 Dev Team
+// SPDX-FileCopyrightText: 2002-2024 PCSX2 Dev Team
 // SPDX-License-Identifier: LGPL-3.0+
 
 #include "AboutDialog.h"
@@ -16,6 +16,7 @@
 #include "Settings/ControllerSettingsWindow.h"
 #include "Settings/GameListSettingsWidget.h"
 #include "Settings/InterfaceSettingsWidget.h"
+#include "Settings/MemoryCardCreateDialog.h"
 #include "Tools/InputRecording/InputRecordingViewer.h"
 #include "Tools/InputRecording/NewInputRecordingDlg.h"
 #include "svnrev.h"
@@ -439,6 +440,7 @@ void MainWindow::connectVMThreadSignals(EmuThread* thread)
 	connect(thread, &EmuThread::onAchievementsLoginSucceeded, this, &MainWindow::onAchievementsLoginSucceeded);
 	connect(thread, &EmuThread::onAchievementsHardcoreModeChanged, this, &MainWindow::onAchievementsHardcoreModeChanged);
 	connect(thread, &EmuThread::onCoverDownloaderOpenRequested, this, &MainWindow::onToolsCoverDownloaderTriggered);
+	connect(thread, &EmuThread::onCreateMemoryCardOpenRequested, this, &MainWindow::onCreateMemoryCardOpenRequested);
 
 	connect(m_ui.actionReset, &QAction::triggered, this, &MainWindow::requestReset);
 	connect(m_ui.actionPause, &QAction::toggled, thread, &EmuThread::setVMPaused);
@@ -569,6 +571,22 @@ void MainWindow::resetSettings(bool ui)
 
 	// g_main_window here for recreate() case above.
 	g_main_window->recreateSettings();
+}
+
+void MainWindow::quit()
+{
+	// Make sure VM is gone. It really should be if we're here.
+	if (s_vm_valid)
+	{
+		g_emu_thread->shutdownVM(false);
+		while (s_vm_valid)
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 1);
+	}
+
+	// Ensure subwindows are removed before quitting. That way the log window cancelling
+	// the close event won't cancel the quit process.
+	destroySubWindows();
+	QGuiApplication::quit();
 }
 
 void MainWindow::destroySubWindows()
@@ -745,7 +763,7 @@ void MainWindow::onAchievementsLoginRequested(Achievements::LoginRequestReason r
 void MainWindow::onAchievementsLoginSucceeded(const QString& display_name, quint32 points, quint32 sc_points, quint32 unread_messages)
 {
 	const QString message =
-		tr("RA: Logged in as %1 (%2, %3 softcore). %4 unread messages.").arg(display_name).arg(points).arg(sc_points).arg(unread_messages);
+		tr("RA: Logged in as %1 (%2 pts, softcore: %3 pts). %4 unread messages.").arg(display_name).arg(points).arg(sc_points).arg(unread_messages);
 	m_ui.statusBar->showMessage(message);
 }
 
@@ -1044,10 +1062,10 @@ bool MainWindow::shouldAbortForMemcardBusy(const VMLock& lock)
 {
 	if (MemcardBusy::IsBusy() && !GSDumpReplayer::IsReplayingDump())
 	{
-		const QMessageBox::StandardButton res = QMessageBox::question(
+		const QMessageBox::StandardButton res = QMessageBox::critical(
 			lock.getDialogParent(),
 			tr("WARNING: Memory Card Busy"),
-			tr("WARNING: Your memory card is still writing data. Shutting down now will IRREVERSIBLY DESTROY YOUR MEMORY CARD. It is strongly recommended to resume your game and let it finish writing to your memory card.\n\nDo you wish to shutdown anyways and IRREVERSIBLY DESTROY YOUR MEMORY CARD?"));
+			tr("WARNING: Your memory card is still writing data. Shutting down now <b>WILL IRREVERSIBLY DESTROY YOUR MEMORY CARD.</b> It is strongly recommended to resume your game and let it finish writing to your memory card.<br><br>Do you wish to shutdown anyways and <b>IRREVERSIBLY DESTROY YOUR MEMORY CARD?</b>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
 		if (res != QMessageBox::Yes)
 		{
@@ -1216,7 +1234,7 @@ void MainWindow::requestExit(bool allow_confirm)
 	if (vm_was_valid)
 		m_is_closing = true;
 	else
-		QGuiApplication::quit();
+		quit();
 }
 
 void MainWindow::checkForSettingChanges()
@@ -1316,11 +1334,10 @@ void MainWindow::onGameListEntryContextMenuRequested(const QPoint& point)
 			});
 		}
 
-		//: Refers to the directory where a game is contained.
-		action = menu.addAction(tr("Open Containing Directory..."));
+		action = menu.addAction(QtUtils::GetShowInFileExplorerMessage());
 		connect(action, &QAction::triggered, [this, entry]() {
 			const QFileInfo fi(QString::fromStdString(entry->path));
-			QtUtils::OpenURL(this, QUrl::fromLocalFile(fi.absolutePath()));
+			QtUtils::ShowInFileExplorer(this, fi);
 		});
 
 		action = menu.addAction(tr("Set Cover Image..."));
@@ -1640,7 +1657,7 @@ void MainWindow::onToolsCoverDownloaderTriggered()
 {
 	// This can be invoked via big picture, so exit fullscreen.
 	VMLock lock(pauseAndLockVM());
-	CoverDownloadDialog dlg(this);
+	CoverDownloadDialog dlg(lock.getDialogParent());
 	connect(&dlg, &CoverDownloadDialog::coverRefreshRequested, m_game_list_widget, &GameListWidget::refreshGridCovers);
 	dlg.exec();
 }
@@ -1669,6 +1686,14 @@ void MainWindow::onToolsEditCheatsPatchesTriggered(bool cheats)
 	}
 
 	QtUtils::OpenURL(this, QUrl::fromLocalFile(QString::fromStdString(path)));
+}
+
+void MainWindow::onCreateMemoryCardOpenRequested()
+{
+	// This can be invoked via big picture, so exit fullscreen.
+	VMLock lock(pauseAndLockVM());
+	MemoryCardCreateDialog dlg(lock.getDialogParent());
+	dlg.exec();
 }
 
 void MainWindow::updateTheme()
@@ -1888,7 +1913,14 @@ void MainWindow::onVMStopped()
 {
 	s_vm_valid = false;
 	s_vm_paused = false;
-	m_last_fps_status = QString();
+
+	const QString empty_string;
+	m_last_fps_status = empty_string;
+	m_status_renderer_widget->setText(empty_string);
+	m_status_resolution_widget->setText(empty_string);
+	m_status_fps_widget->setText(empty_string);
+	m_status_vps_widget->setText(empty_string);
+
 	updateEmulationActions(false, false, false);
 	updateGameDependentActions();
 	updateWindowTitle();
@@ -1899,8 +1931,7 @@ void MainWindow::onVMStopped()
 	// If we're closing or in batch mode, quit the whole application now.
 	if (m_is_closing || QtHost::InBatchMode())
 	{
-		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 1);
-		QCoreApplication::quit();
+		quit();
 		return;
 	}
 
@@ -1948,6 +1979,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 	// If there's no VM, we can just exit as normal.
 	if (!s_vm_valid || !m_display_created)
 	{
+		m_is_closing = true;
 		saveStateToConfig();
 		if (m_display_created)
 			g_emu_thread->stopFullscreenUI();
@@ -2189,6 +2221,13 @@ std::optional<WindowInfo> MainWindow::acquireRenderWindow(bool recreate_window, 
 	// if we're going to surfaceless, we're done here
 	if (surfaceless)
 		return WindowInfo();
+
+	// very low-chance race here, if the user starts the fullscreen UI, and immediately closes the window.
+	if (m_is_closing)
+	{
+		m_display_created = false;
+		return std::nullopt;
+	}
 
 	createDisplayWidget(fullscreen, render_to_main);
 

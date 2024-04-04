@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2002-2023 PCSX2 Dev Team
+// SPDX-FileCopyrightText: 2002-2024 PCSX2 Dev Team
 // SPDX-License-Identifier: LGPL-3.0+
 
 #include "GraphicsSettingsWidget.h"
@@ -230,7 +230,6 @@ GraphicsSettingsWidget::GraphicsSettingsWidget(SettingsWindow* dialog, QWidget* 
 	SettingWidgetBinder::BindWidgetToIntSetting(
 		sif, m_ui.gsDumpCompression, "EmuCore/GS", "GSDumpCompression", static_cast<int>(GSDumpCompressionMethod::Zstandard));
 	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_ui.disableFramebufferFetch, "EmuCore/GS", "DisableFramebufferFetch", false);
-	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_ui.disableDualSource, "EmuCore/GS", "DisableDualSourceBlend", false);
 	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_ui.disableShaderCache, "EmuCore/GS", "DisableShaderCache", false);
 	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_ui.disableVertexShaderExpand, "EmuCore/GS", "DisableVertexShaderExpand", false);
 	SettingWidgetBinder::BindWidgetToIntSetting(
@@ -300,6 +299,26 @@ GraphicsSettingsWidget::GraphicsSettingsWidget(SettingsWindow* dialog, QWidget* 
 	}
 #endif
 
+	// Get rid of widescreen/no-interlace checkboxes from per-game settings, unless the user previously had them set.
+	if (m_dialog->isPerGameSettings())
+	{
+		if ((m_dialog->containsSettingValue("EmuCore", "EnableWideScreenPatches") || m_dialog->containsSettingValue("EmuCore", "EnableNoInterlacingPatches")) &&
+			QMessageBox::question(QtUtils::GetRootWidget(this), tr("Remove Unsupported Settings"),
+				tr("You currently have the <strong>Enable Widescreen Patches</strong> or <strong>Enable No-Interlacing Patches</strong> options enabled for this game.<br><br>"
+				   "We no longer support these options, instead <strong>you should select the \"Patches\" section, and explicitly enable the patches you want.</strong><br><br>"
+				   "Do you want to remove these options from your game configuration now?"),
+				QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
+		{
+			m_dialog->removeSettingValue("EmuCore", "EnableWideScreenPatches");
+			m_dialog->removeSettingValue("EmuCore", "EnableNoInterlacingPatches");
+		}
+
+		m_ui.gridLayout->removeWidget(m_ui.widescreenPatches);
+		m_ui.gridLayout->removeWidget(m_ui.noInterlacingPatches);
+		safe_delete(m_ui.widescreenPatches);
+		safe_delete(m_ui.noInterlacingPatches);		
+	}
+
 	// Hide advanced options by default.
 	if (!QtHost::ShouldShowAdvancedSettings())
 	{
@@ -314,7 +333,6 @@ GraphicsSettingsWidget::GraphicsSettingsWidget(SettingsWindow* dialog, QWidget* 
 		m_ui.skipPresentingDuplicateFrames = nullptr;
 		m_ui.threadedPresentation = nullptr;
 		m_ui.overrideTextureBarriers = nullptr;
-		m_ui.disableDualSource = nullptr;
 		m_ui.disableFramebufferFetch = nullptr;
 		m_ui.disableShaderCache = nullptr;
 		m_ui.disableVertexShaderExpand = nullptr;
@@ -493,18 +511,16 @@ GraphicsSettingsWidget::GraphicsSettingsWidget(SettingsWindow* dialog, QWidget* 
 
 		dialog->registerWidgetHelp(m_ui.spinCPUDuringReadbacks, tr("Spin CPU During Readbacks"), tr("Unchecked"),
 			tr("Does useless work on the CPU during readbacks to prevent it from going to into powersave modes. "
-			   "May improve performance but with a significant increase in power usage."));
+			   "May improve performance during readbacks but with a significant increase in power usage."));
 
 		dialog->registerWidgetHelp(m_ui.spinGPUDuringReadbacks, tr("Spin GPU During Readbacks"), tr("Unchecked"),
 			tr("Submits useless work to the GPU during readbacks to prevent it from going into powersave modes. "
-			   "May improve performance but with a significant increase in power usage."));
+			   "May improve performance during readbacks but with a significant increase in power usage."));
 
 		// Software
 		dialog->registerWidgetHelp(m_ui.extraSWThreads, tr("Software Rendering Threads"), tr("2 threads"),
 			tr("Number of rendering threads: 0 for single thread, 2 or more for multithread (1 is for debugging). "
-			   "If you have 4 threads on your CPU pick 2 or 3. You can calculate how to get the best performance (amount of CPU threads - "
-			   "2). "
-			   "7+ threads will not give much more performance and could perhaps even lower it."));
+			   "2 to 4 threads is recommended, any more than that is likely to be slower instead of faster."));
 
 		dialog->registerWidgetHelp(m_ui.swAutoFlush, tr("Auto Flush"), tr("Checked"),
 			tr("Force a primitive flush when a framebuffer is also an input texture. "
@@ -535,9 +551,9 @@ GraphicsSettingsWidget::GraphicsSettingsWidget(SettingsWindow* dialog, QWidget* 
 			tr("Force a primitive flush when a framebuffer is also an input texture. "
 			   "Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA."));
 
-		dialog->registerWidgetHelp(m_ui.disableDepthEmulation, tr("Disable Depth Emulation"), tr("Unchecked"),
+		dialog->registerWidgetHelp(m_ui.disableDepthEmulation, tr("Disable Depth Conversion"), tr("Unchecked"),
 			tr("Disable the support of depth buffers in the texture cache. "
-			   "It can help to increase speed but it will likely create various glitches."));
+			   "Will likely create various glitches and is only useful for debugging."));
 
 		dialog->registerWidgetHelp(m_ui.disableSafeFeatures, tr("Disable Safe Features"), tr("Unchecked"),
 			tr("This option disables multiple safe features. "
@@ -940,6 +956,7 @@ void GraphicsSettingsWidget::updateRendererDependentOptions()
 	const bool is_software = (type == GSRendererType::SW);
 	const bool is_auto = (type == GSRendererType::Auto);
 	const bool is_vk = (type == GSRendererType::VK);
+	const bool is_disable_barriers = (type == GSRendererType::DX11 || type == GSRendererType::DX12 || type == GSRendererType::Metal || type == GSRendererType::SW);
 	const bool hw_fixes = (is_hardware && m_ui.enableHWFixes && m_ui.enableHWFixes->checkState() == Qt::Checked);
 	const int prev_tab = m_ui.tabs->currentIndex();
 
@@ -973,7 +990,7 @@ void GraphicsSettingsWidget::updateRendererDependentOptions()
 		m_ui.useBlitSwapChain->setEnabled(is_dx11);
 
 	if (m_ui.overrideTextureBarriers)
-		m_ui.overrideTextureBarriers->setDisabled(is_sw_dx);
+		m_ui.overrideTextureBarriers->setDisabled(is_disable_barriers);
 
 	if (m_ui.disableFramebufferFetch)
 		m_ui.disableFramebufferFetch->setDisabled(is_sw_dx);

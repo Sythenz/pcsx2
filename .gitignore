@@ -80,6 +80,7 @@ oprofile_data/
 /bin/gamesettings
 /bin/help
 /bin/inis
+/bin/inis/debuggersettings
 /bin/logs
 /bin/memcards
 /bin/plugins
@@ -90,6 +91,7 @@ oprofile_data/
 /bin/inputprofiles
 /bin/videos
 /bin/portable.ini
+/bin/portable.txt
 
 # Manually added by user.
 /bin/resources/patches.zip

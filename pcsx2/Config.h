@@ -594,7 +594,6 @@ struct Pcsx2Config
 					UseDebugDevice : 1,
 					UseBlitSwapChain : 1,
 					DisableShaderCache : 1,
-					DisableDualSourceBlend : 1,
 					DisableFramebufferFetch : 1,
 					DisableVertexShaderExpand : 1,
 					DisableThreadedPresentation : 1,
@@ -1132,7 +1131,6 @@ struct Pcsx2Config
 		EnableNoInterlacingPatches : 1,
 		EnableFastBoot : 1,
 		EnableFastBootFastForward : 1,
-		EnablePerGameSettings : 1,
 		// TODO - Vaser - where are these settings exposed in the Qt UI?
 		EnableRecordingTools : 1,
 		EnableGameFixes : 1, // enables automatic game fixes
@@ -1146,11 +1144,6 @@ struct Pcsx2Config
 		HostFs : 1,
 
 		WarnAboutUnsafeSettings : 1;
-
-	// uses automatic ntfs compression when creating new memory cards (Win32 only)
-#ifdef _WIN32
-	bool McdCompressNTFS;
-#endif
 	BITFIELD_END
 
 	CpuOptions Cpu;
@@ -1215,11 +1208,11 @@ namespace EmuFolders
 	extern std::string AppRoot;
 	extern std::string DataRoot;
 	extern std::string Settings;
+	extern std::string DebuggerSettings;
 	extern std::string Bios;
 	extern std::string Snapshots;
 	extern std::string Savestates;
 	extern std::string MemoryCards;
-	extern std::string Langs;
 	extern std::string Logs;
 	extern std::string Cheats;
 	extern std::string Patches;

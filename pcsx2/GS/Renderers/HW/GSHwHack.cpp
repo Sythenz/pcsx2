@@ -154,6 +154,12 @@ bool GSHwHack::GSC_Tekken5(GSRendererHW& r, int& skip)
 		{
 			pxAssertMsg((RTBP0 & 31) == 0, "TEX0 should be page aligned");
 
+			GSVertex* v = &r.m_vertex.buff[0];
+
+			// Make sure we're detecting the right effect.
+			if (((v[1].XYZ.X - v[0].XYZ.X) >> 4) != 8 || ((v[1].XYZ.Y - v[0].XYZ.Y) >> 4) != 14)
+				return false;
+
 			GSTextureCache::Target* rt = g_texture_cache->LookupTarget(GIFRegTEX0::Create(RTBP0, RFBW, RFPSM),
 				GSVector2i(1, 1), r.GetTextureScaleFactor(), GSTextureCache::RenderTarget);
 			if (!rt)
@@ -180,13 +186,13 @@ bool GSHwHack::GSC_Tekken5(GSRendererHW& r, int& skip)
 			return true;
 		}
 
-		if (!s_nativeres && RTME && (RFBP == 0x02d60 || RFBP == 0x02d80 || RFBP == 0x02ea0 || RFBP == 0x03620 || RFBP == 0x03640) && RFPSM == RTPSM && RTBP0 == 0x00000 && RTPSM == PSMCT32)
+		if (!s_nativeres && RTME && RTEX0.TFX == 1 && RFPSM == RTPSM && std::abs(static_cast<int>(RFBP - RTBP0)) == 0x180 && RTPSM == PSMCT32 && RFBMSK == 0xFF000000)
 		{
-			// Don't enable hack on native res if crc is below aggressive.
-			// Fixes/removes ghosting/blur effect and white lines appearing in stages: Moonfit Wilderness, Acid Rain - caused by upscaling.
-			// Downside is it also removes the channel effect which is fixed.
-			// Let's enable this hack for Aggressive only since it's an upscaling issue for both renders.
-			skip = 95;
+			// Don't enable hack on native res.
+			// Fixes ghosting/blur effect and white lines appearing in stages: Moonfit Wilderness, Acid Rain - caused by upscaling.
+			const GSVector4i draw_size(r.m_vt.m_min.p.x, r.m_vt.m_min.p.y, r.m_vt.m_max.p.x + 1.0f, r.m_vt.m_max.p.y + 1.0f);
+			const GSVector4i read_size(r.m_vt.m_min.t.x, r.m_vt.m_min.t.y, r.m_vt.m_max.t.x + 0.5f, r.m_vt.m_max.t.y + 0.5f);
+			r.ReplaceVerticesWithSprite(draw_size, read_size, GSVector2i(read_size.width(), read_size.height()), draw_size);
 		}
 		else if (RZTST == 1 && RTME && (RFBP == 0x02bc0 || RFBP == 0x02be0 || RFBP == 0x02d00 || RFBP == 0x03480 || RFBP == 0x034a0) && RFPSM == RTPSM && RTBP0 == 0x00000 && RTPSM == PSMCT32)
 		{
@@ -602,7 +608,7 @@ bool GSHwHack::GSC_NFSUndercover(GSRendererHW& r, int& skip)
 	if (RPRIM->TME && Frame.PSM == PSMCT16S && Frame.FBMSK != 0 && Frame.FBW == 10 && Texture.TBW == 1 && Texture.TBP0 == 0x02800 && Texture.PSM == PSMZ16S)
 	{
 		GSVertex* v = &r.m_vertex.buff[1];
-		v[0].XYZ.X = static_cast<u16>(RCONTEXT->XYOFFSET.OFX + (r.m_r.z << 4));
+		v[0].XYZ.X = static_cast<u16>(RCONTEXT->XYOFFSET.OFX + ((r.m_r.z * 2) << 4));
 		v[0].XYZ.Y = static_cast<u16>(RCONTEXT->XYOFFSET.OFY + (r.m_r.w << 4));
 		v[0].U = r.m_r.z << 4;
 		v[0].V = r.m_r.w << 4;
@@ -675,7 +681,6 @@ bool GSHwHack::GSC_PolyphonyDigitalGames(GSRendererHW& r, int& skip)
 	if (RFBMSK != 0x00FFFFFFu)
 	{
 		GL_PUSH("GSC_PolyphonyDigitalGames(): HLE Gran Turismo RGB channel shuffle");
-
 		GSHWDrawConfig& config = r.BeginHLEHardwareDraw(
 			src->GetTexture(), nullptr, src->GetScale(), src->GetTexture(), src->GetScale(), src->GetUnscaledRect());
 		config.pal = palette->GetPaletteGSTexture();
@@ -724,11 +729,11 @@ bool GSHwHack::GSC_PolyphonyDigitalGames(GSRendererHW& r, int& skip)
 
 			// Need the alpha channel.
 			dst->m_TEX0.PSM = PSMCT32;
-
+			dst->m_rt_alpha_scale = false;
 			// Alpha is unknown, since it comes from RGB.
 			dst->m_alpha_min = 0;
 			dst->m_alpha_max = 255;
-
+			dst->m_alpha_range = true;
 			dst->UpdateValidChannels(PSMCT32, fbmsk);
 			dst->UpdateValidity(GSVector4i::loadh(size));
 
@@ -1011,6 +1016,7 @@ bool GSHwHack::OI_RozenMaidenGebetGarden(GSRendererHW& r, GSTexture* rt, GSTextu
 				tmp_rt->UpdateDrawn(tmp_rt->m_valid);
 				tmp_rt->m_alpha_max = 0;
 				tmp_rt->m_alpha_min = 0;
+				tmp_rt->m_alpha_range = false;
 			}
 
 			return false;
@@ -1426,6 +1432,7 @@ bool GSHwHack::MV_Ico(GSRendererHW& r)
 	const GSVector4i draw_rc = GSVector4i(0, 0, RWIDTH, RHEIGHT).rintersect(dst->GetUnscaledRect());
 	dst->UpdateValidChannels(PSMCT32, 0);
 	dst->UpdateValidity(draw_rc);
+	dst->RTADecorrect();
 
 	GSHWDrawConfig& config = GSRendererHW::GetInstance()->BeginHLEHardwareDraw(
 		dst->GetTexture(), nullptr, dst->GetScale(), src->GetTexture(), src->GetScale(), draw_rc);

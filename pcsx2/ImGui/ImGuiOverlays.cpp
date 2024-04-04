@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2002-2023 PCSX2 Dev Team
+// SPDX-FileCopyrightText: 2002-2024 PCSX2 Dev Team
 // SPDX-License-Identifier: LGPL-3.0+
 
 #include "Config.h"
@@ -10,6 +10,7 @@
 #include "GS/Renderers/Common/GSDevice.h"
 #include "Host.h"
 #include "IconsFontAwesome5.h"
+#include "IconsPromptFont.h"
 #include "ImGui/FullscreenUI.h"
 #include "ImGui/ImGuiAnimated.h"
 #include "ImGui/ImGuiFullscreen.h"
@@ -47,10 +48,11 @@
 namespace ImGuiManager
 {
 	static void FormatProcessorStat(SmallStringBase& text, double usage, double time);
-	static void DrawPerformanceOverlay(float& position_y);
-	static void DrawSettingsOverlay();
-	static void DrawInputsOverlay();
-	static void DrawInputRecordingOverlay(float& position_y);
+	static void DrawPerformanceOverlay(float& position_y, float scale, float margin, float spacing);
+	static void DrawSettingsOverlay(float scale, float margin, float spacing);
+	static void DrawInputsOverlay(float scale, float margin, float spacing);
+	static void DrawInputRecordingOverlay(float& position_y, float scale, float margin, float spacing);
+	static void DrawVideoCaptureOverlay(float& position_y, float scale, float margin, float spacing);
 } // namespace ImGuiManager
 
 static std::tuple<float, float> GetMinMax(std::span<const float> values)
@@ -79,7 +81,7 @@ static std::tuple<float, float> GetMinMax(std::span<const float> values)
 	return std::tie(min, max);
 }
 
-void ImGuiManager::FormatProcessorStat(SmallStringBase& text, double usage, double time)
+__ri void ImGuiManager::FormatProcessorStat(SmallStringBase& text, double usage, double time)
 {
 	// Some values, such as GPU (and even CPU to some extent) can be out of phase with the wall clock,
 	// which the processor time is divided by to get a utilization percentage. Let's clamp it at 100%,
@@ -90,12 +92,9 @@ void ImGuiManager::FormatProcessorStat(SmallStringBase& text, double usage, doub
 		text.append_fmt("{:.1f}% ({:.2f}ms)", usage, time);
 }
 
-void ImGuiManager::DrawPerformanceOverlay(float& position_y)
+__ri void ImGuiManager::DrawPerformanceOverlay(float& position_y, float scale, float margin, float spacing)
 {
-	const float scale = ImGuiManager::GetGlobalScale();
-	const float shadow_offset = std::ceil(1.0f * scale);
-	const float margin = std::ceil(10.0f * scale);
-	const float spacing = std::ceil(5.0f * scale);
+	const float shadow_offset = std::ceil(scale);
 
 	ImFont* const fixed_font = ImGuiManager::GetFixedFont();
 	ImFont* const standard_font = ImGuiManager::GetStandardFont();
@@ -244,8 +243,12 @@ void ImGuiManager::DrawPerformanceOverlay(float& position_y)
 			const bool is_normal_speed = (target_speed == EmuConfig.EmulationSpeed.NominalScalar);
 			if (!is_normal_speed)
 			{
-				const bool is_slowmo = (target_speed < EmuConfig.EmulationSpeed.NominalScalar);
-				DRAW_LINE(standard_font, is_slowmo ? ICON_FA_FORWARD : ICON_FA_FAST_FORWARD, IM_COL32(255, 255, 255, 255));
+				if (target_speed == EmuConfig.EmulationSpeed.SlomoScalar) // Slow-Motion
+					DRAW_LINE(standard_font, ICON_PF_SLOW_MOTION, IM_COL32(255, 255, 255, 255));
+				else if (target_speed == EmuConfig.EmulationSpeed.TurboScalar) // Turbo
+					DRAW_LINE(standard_font, ICON_FA_FAST_FORWARD, IM_COL32(255, 255, 255, 255));
+				else // Unlimited
+					DRAW_LINE(standard_font, ICON_FA_FORWARD, IM_COL32(255, 255, 255, 255));
 			}
 		}
 
@@ -321,7 +324,7 @@ void ImGuiManager::DrawPerformanceOverlay(float& position_y)
 #undef DRAW_LINE
 }
 
-void ImGuiManager::DrawSettingsOverlay()
+__ri void ImGuiManager::DrawSettingsOverlay(float scale, float margin, float spacing)
 {
 	if (!GSConfig.OsdShowSettings || VMManager::GetState() != VMState::Running)
 		return;
@@ -415,7 +418,7 @@ void ImGuiManager::DrawSettingsOverlay()
 		if (GSConfig.UserHacks_ReadTCOnClose)
 			APPEND("FTC ");
 		if (GSConfig.UserHacks_DisableDepthSupport)
-			APPEND("DDE ");
+			APPEND("DDC ");
 		if (GSConfig.UserHacks_DisablePartialInvalidation)
 			APPEND("DPIV ");
 		if (GSConfig.UserHacks_DisableSafeFeatures)
@@ -426,6 +429,10 @@ void ImGuiManager::DrawSettingsOverlay()
 			APPEND("PLFD ");
 		if (GSConfig.UserHacks_EstimateTextureRegion)
 			APPEND("ETR ");
+		if (GSConfig.HWSpinGPUForReadbacks)
+			APPEND("RBSG ");
+		if (GSConfig.HWSpinCPUForReadbacks)
+			APPEND("RBSC ");
 	}
 
 #undef APPEND
@@ -435,9 +442,7 @@ void ImGuiManager::DrawSettingsOverlay()
 	else if (text.back() == ' ')
 		text.pop_back();
 
-	const float scale = ImGuiManager::GetGlobalScale();
-	const float shadow_offset = 1.0f * scale;
-	const float margin = 10.0f * scale;
+	const float shadow_offset = std::ceil(scale);
 	ImFont* font = ImGuiManager::GetFixedFont();
 	const float position_y = GetWindowHeight() - margin - font->FontSize;
 
@@ -451,16 +456,13 @@ void ImGuiManager::DrawSettingsOverlay()
 		text.c_str(), text.c_str() + text.length());
 }
 
-void ImGuiManager::DrawInputsOverlay()
+__ri void ImGuiManager::DrawInputsOverlay(float scale, float margin, float spacing)
 {
 	// Technically this is racing the CPU thread.. but it doesn't really matter, at worst, the inputs get displayed onscreen late.
 	if (!GSConfig.OsdShowInputs || VMManager::GetState() != VMState::Running)
 		return;
 
-	const float scale = ImGuiManager::GetGlobalScale();
-	const float shadow_offset = 1.0f * scale;
-	const float margin = 10.0f * scale;
-	const float spacing = 5.0f * scale;
+	const float shadow_offset = std::ceil(scale);
 	ImFont* font = ImGuiManager::GetStandardFont();
 
 	static constexpr u32 text_color = IM_COL32(0xff, 0xff, 0xff, 255);
@@ -557,7 +559,7 @@ void ImGuiManager::DrawInputsOverlay()
 		if (bindings.empty())
 			continue;
 
-		text.fmt("USB{} |", port + 1u);
+		text.fmt("{} {} ", ICON_PF_USB, port + 1u);
 
 		for (const InputBindingInfo& bi : bindings)
 		{
@@ -603,13 +605,12 @@ void ImGuiManager::DrawInputsOverlay()
 	}
 }
 
-void ImGuiManager::DrawInputRecordingOverlay(float& position_y)
+__ri void ImGuiManager::DrawInputRecordingOverlay(float& position_y, float scale, float margin, float spacing)
 {
-	const float scale = ImGuiManager::GetGlobalScale();
-	const float shadow_offset = std::ceil(1.0f * scale);
-	const float margin = std::ceil(10.0f * scale);
-	const float spacing = std::ceil(5.0f * scale);
-	position_y += margin;
+	if (!g_InputRecording.isActive() || FullscreenUI::HasActiveWindow())
+		return;
+
+	const float shadow_offset = std::ceil(scale);
 
 	ImFont* const fixed_font = ImGuiManager::GetFixedFont();
 	ImFont* const standard_font = ImGuiManager::GetStandardFont();
@@ -629,27 +630,57 @@ void ImGuiManager::DrawInputRecordingOverlay(float& position_y)
 		dl->AddText(font, font->FontSize, ImVec2(GetWindowWidth() - margin - text_size.x, position_y), color, (text)); \
 		position_y += text_size.y + spacing; \
 	} while (0)
-	// TODO - icon list that would be nice to add
-	// - 'video' when screen capturing
-	if (g_InputRecording.isActive())
-	{
-		// Status Indicators
-		if (g_InputRecording.getControls().isRecording())
-		{
-			DRAW_LINE(standard_font, fmt::format("{} Recording", ICON_FA_RECORD_VINYL).c_str(), IM_COL32(255, 0, 0, 255));
-		}
-		else
-		{
-			DRAW_LINE(standard_font, fmt::format("{} Replaying", ICON_FA_PLAY).c_str(), IM_COL32(97, 240, 84, 255));
-		}
 
-		// Input Recording Metadata
-		DRAW_LINE(fixed_font, fmt::format("Input Recording Active: {}", g_InputRecording.getData().getFilename()).c_str(), IM_COL32(117, 255, 241, 255));
-		DRAW_LINE(fixed_font, fmt::format("Frame: {}/{} ({})", g_InputRecording.getFrameCounter() + 1, g_InputRecording.getData().getTotalFrames(), g_FrameCount).c_str(), IM_COL32(117, 255, 241, 255));
-		DRAW_LINE(fixed_font, fmt::format("Undo Count: {}", g_InputRecording.getData().getUndoCount()).c_str(), IM_COL32(117, 255, 241, 255));
+	// Status Indicators
+	if (g_InputRecording.getControls().isRecording())
+	{
+		DRAW_LINE(standard_font, TinyString::from_fmt(TRANSLATE_FS("ImGuiOverlays", "{} Recording Input"), ICON_PF_CIRCLE).c_str(), IM_COL32(255, 0, 0, 255));
+	}
+	else
+	{
+		DRAW_LINE(standard_font, TinyString::from_fmt(TRANSLATE_FS("ImGuiOverlays", "{} Replaying"), ICON_FA_PLAY).c_str(), IM_COL32(97, 240, 84, 255));
 	}
 
+	// Input Recording Metadata
+	DRAW_LINE(fixed_font, TinyString::from_fmt(TRANSLATE_FS("ImGuiOverlays", "Input Recording Active: {}"), g_InputRecording.getData().getFilename()).c_str(), IM_COL32(117, 255, 241, 255));
+	DRAW_LINE(fixed_font, TinyString::from_fmt(TRANSLATE_FS("ImGuiOverlays", "Frame: {}/{} ({})"), g_InputRecording.getFrameCounter() + 1, g_InputRecording.getData().getTotalFrames(), g_FrameCount).c_str(), IM_COL32(117, 255, 241, 255));
+	DRAW_LINE(fixed_font, TinyString::from_fmt(TRANSLATE_FS("ImGuiOverlays", "Undo Count: {}"), g_InputRecording.getData().getUndoCount()).c_str(), IM_COL32(117, 255, 241, 255));
+
 #undef DRAW_LINE
+}
+
+__ri void ImGuiManager::DrawVideoCaptureOverlay(float& position_y, float scale, float margin, float spacing)
+{
+	if (!GSCapture::IsCapturing() || FullscreenUI::HasActiveWindow())
+		return;
+
+	const float shadow_offset = std::ceil(scale);
+	ImFont* const standard_font = ImGuiManager::GetStandardFont();
+	ImDrawList* dl = ImGui::GetBackgroundDrawList();
+
+	static constexpr const char* ICON = ICON_PF_CIRCLE;
+	const TinyString text_msg = TinyString::from_fmt(" {}", GSCapture::GetElapsedTime());
+	const ImVec2 icon_size = standard_font->CalcTextSizeA(standard_font->FontSize, std::numeric_limits<float>::max(),
+		-1.0f, ICON, nullptr, nullptr);
+	const ImVec2 text_size = standard_font->CalcTextSizeA(standard_font->FontSize, std::numeric_limits<float>::max(),
+		-1.0f, text_msg.c_str(), text_msg.end_ptr(), nullptr);
+
+	// Shadow
+	dl->AddText(standard_font, standard_font->FontSize,
+		ImVec2(GetWindowWidth() - margin - text_size.x - icon_size.x + shadow_offset, position_y + shadow_offset),
+		IM_COL32(0, 0, 0, 100), ICON);
+	dl->AddText(standard_font, standard_font->FontSize,
+		ImVec2(GetWindowWidth() - margin - text_size.x + shadow_offset, position_y + shadow_offset),
+		IM_COL32(0, 0, 0, 100), text_msg.c_str(), text_msg.end_ptr());
+
+	// Text
+	dl->AddText(standard_font, standard_font->FontSize,
+		ImVec2(GetWindowWidth() - margin - text_size.x - icon_size.x, position_y), IM_COL32(255, 0, 0, 255), ICON);
+	dl->AddText(standard_font, standard_font->FontSize,
+		ImVec2(GetWindowWidth() - margin - text_size.x, position_y), IM_COL32(255, 255, 255, 255), text_msg.c_str(),
+		text_msg.end_ptr());
+
+	position_y += std::max(icon_size.y, text_size.y) + spacing;
 }
 
 namespace SaveStateSelectorUI
@@ -697,7 +728,7 @@ void SaveStateSelectorUI::Open(float open_time /* = DEFAULT_OPEN_TIME */)
 	const std::string serial = VMManager::GetDiscSerial();
 	if (serial.empty())
 	{
-		Host::AddIconOSDMessage("SaveStateSelectorUIUnavailable", ICON_FA_SD_CARD,
+		Host::AddIconOSDMessage("SaveStateSelectorUIUnavailable", ICON_PF_MEMORY_CARD,
 			TRANSLATE_SV("ImGuiOverlays", "Save state selector is unavailable without a valid game serial."));
 		return;
 	}
@@ -1040,11 +1071,15 @@ void SaveStateSelectorUI::ShowSlotOSDMessage()
 
 void ImGuiManager::RenderOverlays()
 {
-	float position_y = 0;
-	DrawInputRecordingOverlay(position_y);
-	DrawPerformanceOverlay(position_y);
-	DrawSettingsOverlay();
-	DrawInputsOverlay();
+	const float scale = ImGuiManager::GetGlobalScale();
+	const float margin = std::ceil(10.0f * scale);
+	const float spacing = std::ceil(5.0f * scale);
+	float position_y = margin;
+	DrawVideoCaptureOverlay(position_y, scale, margin, spacing);
+	DrawInputRecordingOverlay(position_y, scale, margin, spacing);
+	DrawPerformanceOverlay(position_y, scale, margin, spacing);
+	DrawSettingsOverlay(scale, margin, spacing);
+	DrawInputsOverlay(scale, margin, spacing);
 	if (SaveStateSelectorUI::s_open)
 		SaveStateSelectorUI::Draw();
 }

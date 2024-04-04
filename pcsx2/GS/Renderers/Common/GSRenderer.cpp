@@ -97,7 +97,10 @@ bool GSRenderer::Merge(int field)
 	PCRTCDisplays.CheckSameSource();
 
 	if (!PCRTCDisplays.PCRTCDisplays[0].enabled && !PCRTCDisplays.PCRTCDisplays[1].enabled)
+	{
+		m_real_size = GSVector2i(0, 0);
 		return false;
+	}
 
 	// Need to do this here, if the user has Anti-Blur enabled, these offsets can get wiped out/changed.
 	const bool game_deinterlacing = (m_regs->DISP[0].DISPFB.DBY != PCRTCDisplays.PCRTCDisplays[0].prevFramebufferReg.DBY) !=
@@ -127,7 +130,10 @@ bool GSRenderer::Merge(int field)
 	}
 
 	if (!tex[0] && !tex[1])
+	{
+		m_real_size = GSVector2i(0, 0);
 		return false;
+	}
 
 	s_n++;
 
@@ -401,14 +407,15 @@ static GSVector4 CalculateDrawDstRect(s32 window_width, s32 window_height, const
 	return ret;
 }
 
-static GSVector4i CalculateDrawSrcRect(const GSTexture* src)
+static GSVector4i CalculateDrawSrcRect(const GSTexture* src, const GSVector2i real_size)
 {
-	const float upscale = GSConfig.UpscaleMultiplier;
 	const GSVector2i size(src->GetSize());
-	const int left = static_cast<int>(static_cast<float>(GSConfig.Crop[0]) * upscale);
-	const int top = static_cast<int>(static_cast<float>(GSConfig.Crop[1]) * upscale);
-	const int right =  size.x - static_cast<int>(static_cast<float>(GSConfig.Crop[2]) * upscale);
-	const int bottom = size.y - static_cast<int>(static_cast<float>(GSConfig.Crop[3]) * upscale);
+	const GSVector2 scale = GSVector2(size.x, size.y) / GSVector2(real_size.x, real_size.y).max(GSVector2(0.1f, 0.1f));
+	const float upscale = GSIsHardwareRenderer() ? GSConfig.UpscaleMultiplier : 1;
+	const int left = static_cast<int>(static_cast<float>(GSConfig.Crop[0] * scale.x) * upscale);
+	const int top = static_cast<int>(static_cast<float>(GSConfig.Crop[1] * scale.y) * upscale);
+	const int right =  size.x - static_cast<int>(static_cast<float>(GSConfig.Crop[2] * scale.x) * upscale);
+	const int bottom = size.y - static_cast<int>(static_cast<float>(GSConfig.Crop[3] * scale.y) * upscale);
 	return GSVector4i(left, top, right, bottom);
 }
 
@@ -602,7 +609,7 @@ void GSRenderer::VSync(u32 field, bool registers_written, bool idle_frame)
 	GSTexture* current = g_gs_device->GetCurrent();
 	if (current && !blank_frame)
 	{
-		src_rect = CalculateDrawSrcRect(current);
+		src_rect = CalculateDrawSrcRect(current, m_real_size);
 		src_uv = GSVector4(src_rect) / GSVector4(current->GetSize()).xyxy();
 		draw_rect = CalculateDrawDstRect(g_gs_device->GetWindowWidth(), g_gs_device->GetWindowHeight(),
 			src_rect, current->GetSize(), s_display_alignment, g_gs_device->UsesLowerLeftOrigin(),
@@ -675,23 +682,23 @@ void GSRenderer::VSync(u32 field, bool registers_written, bool idle_frame)
 			std::string_view compression_str;
 			if (GSConfig.GSDumpCompression == GSDumpCompressionMethod::Uncompressed)
 			{
-				m_dump = std::unique_ptr<GSDumpBase>(new GSDumpUncompressed(m_snapshot, VMManager::GetDiscSerial(),
+				m_dump = GSDumpBase::CreateUncompressedDump(m_snapshot, VMManager::GetDiscSerial(),
 					VMManager::GetDiscCRC(), screenshot_width, screenshot_height,
-					screenshot_pixels.empty() ? nullptr : screenshot_pixels.data(), fd, m_regs));
+					screenshot_pixels.empty() ? nullptr : screenshot_pixels.data(), fd, m_regs);
 				compression_str = TRANSLATE_SV("GS", "with no compression");
 			}
 			else if (GSConfig.GSDumpCompression == GSDumpCompressionMethod::LZMA)
 			{
-				m_dump = std::unique_ptr<GSDumpBase>(
-					new GSDumpXz(m_snapshot, VMManager::GetDiscSerial(), VMManager::GetDiscCRC(), screenshot_width,
-						screenshot_height, screenshot_pixels.empty() ? nullptr : screenshot_pixels.data(), fd, m_regs));
+				m_dump = GSDumpBase::CreateXzDump(m_snapshot, VMManager::GetDiscSerial(),
+					VMManager::GetDiscCRC(), screenshot_width, screenshot_height,
+					screenshot_pixels.empty() ? nullptr : screenshot_pixels.data(), fd, m_regs);
 				compression_str = TRANSLATE_SV("GS", "with LZMA compression");
 			}
 			else
 			{
-				m_dump = std::unique_ptr<GSDumpBase>(
-					new GSDumpZst(m_snapshot, VMManager::GetDiscSerial(), VMManager::GetDiscCRC(), screenshot_width,
-						screenshot_height, screenshot_pixels.empty() ? nullptr : screenshot_pixels.data(), fd, m_regs));
+				m_dump = GSDumpBase::CreateZstDump(m_snapshot, VMManager::GetDiscSerial(),
+					VMManager::GetDiscCRC(), screenshot_width, screenshot_height,
+					screenshot_pixels.empty() ? nullptr : screenshot_pixels.data(), fd, m_regs);
 				compression_str = TRANSLATE_SV("GS", "with Zstandard compression");
 			}
 
@@ -866,7 +873,7 @@ void GSRenderer::PresentCurrentFrame()
 		GSTexture* current = g_gs_device->GetCurrent();
 		if (current)
 		{
-			const GSVector4i src_rect(CalculateDrawSrcRect(current));
+			const GSVector4i src_rect(CalculateDrawSrcRect(current, m_real_size));
 			const GSVector4 src_uv(GSVector4(src_rect) / GSVector4(current->GetSize()).xyxy());
 			const GSVector4 draw_rect(CalculateDrawDstRect(g_gs_device->GetWindowWidth(), g_gs_device->GetWindowHeight(),
 				src_rect, current->GetSize(), s_display_alignment, g_gs_device->UsesLowerLeftOrigin(),
@@ -946,7 +953,7 @@ bool GSRenderer::SaveSnapshotToMemory(u32 window_width, u32 window_height, bool 
 		return false;
 	}
 
-	const GSVector4i src_rect(CalculateDrawSrcRect(current));
+	const GSVector4i src_rect(CalculateDrawSrcRect(current, m_real_size));
 	const GSVector4 src_uv(GSVector4(src_rect) / GSVector4(current->GetSize()).xyxy());
 
 	const bool is_progressive = (GetVideoMode() == GSVideoMode::SDTV_480P);
